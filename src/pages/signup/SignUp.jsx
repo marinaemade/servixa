@@ -1,0 +1,259 @@
+import React, { useState } from "react";
+import { UserIcon, EnvelopeIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { FaFacebookF, FaGoogle, FaApple } from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+
+const SignUp = () => {
+  const [userInfo, setUserInfo] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+  const [errors, setErrors] = useState({});
+  const [success, setSuccess] = useState({});
+
+  //  VALIDATION FUNCTION
+  const validateField = (field, value) => {
+    let error = "";
+
+    const nameRegex = /^[\u0600-\u06FFa-zA-Z\s]{3,}$/;
+    const emailRegex =
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
+
+    if (field === "name") {
+      if (!value.trim()) error = "الاسم مطلوب";
+      else if (!nameRegex.test(value))
+        error = "الاسم يجب أن يكون 3 أحرف على الأقل";
+    }
+
+    if (field === "email") {
+      if (!value.trim()) error = "البريد الإلكتروني مطلوب";
+      else if (!emailRegex.test(value))
+        error = "بريد إلكتروني غير صالح";
+    }
+
+    if (field === "password") {
+      if (!value) error = "كلمة المرور مطلوبة";
+      else if (!passwordRegex.test(value))
+        error = "يجب أن تحتوي على حرف كبير وصغير ورقم ورمز";
+    }
+
+    return error;
+  };
+
+  const handleChange = (field, value) => {
+    setUserInfo((prev) => ({ ...prev, [field]: value }));
+
+    const error = validateField(field, value);
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: error,
+    }));
+
+    setSuccess((prev) => ({
+      ...prev,
+      [field]: !error && value ? true : false,
+    }));
+  };
+
+  const navigate= useNavigate()
+  const submitUser = (e) => {
+    e.preventDefault();
+
+    let newErrors = {};
+    Object.keys(userInfo).forEach((field) => {
+      const error = validateField(field, userInfo[field]);
+      if (error) newErrors[field] = error;
+    });
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) return;
+
+    // navigate to next step after creating an acc
+    navigate('/login')
+
+    console.log("VALID DATA:", userInfo);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans" dir="rtl">
+      
+      {/* NAVBAR */}
+      <nav className="w-full py-4 px-6 md:px-8 flex justify-between items-center bg-white shadow-sm">
+        <div className="text-2xl font-bold">
+          <span>Ser</span>
+          <span className="text-[#1093ED]">vixa</span>
+        </div>
+
+        <button className="bg-[#1093ED] text-white px-6 py-2 rounded-lg hover:bg-blue-600">
+          تسجيل الدخول
+        </button>
+      </nav>
+
+      {/* MAIN */}
+      <div className="flex-grow flex items-center justify-center p-4">
+        <div className="bg-white rounded-[40px] shadow-2xl flex flex-col lg:flex-row max-w-6xl w-full overflow-hidden min-h-[750px]">
+
+          {/* LEFT FORM */}
+          <div className="w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-center">
+
+            <h1 className="text-3xl font-bold mb-2">إنشاء حساب جديد</h1>
+            <p className="text-gray-400 text-sm mb-8">
+              ابدأ رحلتك التعليمية الممتعة اليوم مع أجيال
+            </p>
+
+            <form onSubmit={submitUser} className="space-y-5">
+
+              {/* NAME */}
+              <div>
+                <label className="text-sm font-bold block mb-2">الاسم الكامل</label>
+
+                <div className="relative">
+                  <UserIcon className="w-5 h-5 absolute top-1/2 right-4 -translate-y-1/2 text-gray-400" />
+
+                  <input
+                    value={userInfo.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    className={`w-full pr-12 py-4 rounded-2xl  border bg-gray-50 text-right
+                      ${
+                        errors.name
+                          ? "border-red-500"
+                          : success.name
+                          ? "border-green-500"
+                          : "border-gray-200"
+                      }`}
+                    placeholder="أدخل اسمك الثلاثي"
+                  />
+                </div>
+
+                <div className="min-h-[20px] mt-1 text-sm text-red-500">
+                  {errors.name}
+                </div>
+              </div>
+
+              {/* EMAIL */}
+              <div>
+                <label className="text-sm font-bold block mb-2">البريد الإلكتروني</label>
+
+                <div className="relative">
+                  <EnvelopeIcon className="w-5 h-5 absolute top-1/2 right-4 -translate-y-1/2 text-gray-400" />
+
+                  <input
+                    value={userInfo.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    className={`w-full pr-12 py-4 rounded-2xl border bg-gray-50 text-right
+                      ${
+                        errors.email
+                          ? "border-red-500"
+                          : success.email
+                          ? "border-green-500"
+                          : "border-gray-200"
+                      }`}
+                    placeholder="example@domain.com"
+                  />
+                </div>
+
+                <div className="min-h-[20px] mt-1 text-sm text-red-500">
+                  {errors.email}
+                </div>
+              </div>
+
+              {/* PASSWORD */}
+              <div>
+                <label className="text-sm font-bold block mb-2">كلمة المرور</label>
+
+                <div className="relative">
+                  <EyeIcon className="w-5 h-5 absolute top-1/2 right-4 -translate-y-1/2 text-gray-400" />
+
+                  <input
+                    type="password"
+                    value={userInfo.password}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    className={`w-full pr-12 py-4 rounded-2xl border bg-gray-50 text-right
+                      ${
+                        errors.password
+                          ? "border-red-500"
+                          : success.password
+                          ? "border-green-500"
+                          : "border-gray-200"
+                      }`}
+                    placeholder="********"
+                  />
+                </div>
+
+                <div className="min-h-[20px] mt-1 text-sm text-red-500">
+                  {errors.password}
+                </div>
+              </div>
+
+              <button className="w-full bg-[#1093ED] text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-600">
+                إنشاء الحساب
+              </button>
+            </form>
+
+            {/* LOGIN LINK */}
+            <div className="mt-6 text-center text-sm">
+              لديك حساب بالفعل؟{" "}
+              <Link to="/login" className="text-[#1093ED] font-bold">
+                تسجيل الدخول
+              </Link>
+            </div>
+
+            {/* DIVIDER (FIXED) */}
+            <div className="mt-10 flex items-center gap-4">
+              <div className="flex-1 h-px bg-gray-200"></div>
+              <span className="text-sm text-gray-400 whitespace-nowrap">
+                أو سجل الدخول بـ
+              </span>
+              <div className="flex-1 h-px bg-gray-200"></div>
+            </div>
+
+            {/* SOCIAL ICONS */}
+            <div className="mt-6 flex gap-4">
+              <button className="flex-1 flex justify-center items-center py-3 border rounded-xl hover:bg-gray-50">
+                <FaFacebookF className="text-blue-600" />
+              </button>
+
+              <button className="flex-1 flex justify-center items-center py-3 border rounded-xl hover:bg-gray-50">
+                <FaGoogle className="text-red-500" />
+              </button>
+
+              <button className="flex-1 flex justify-center items-center py-3 border rounded-xl hover:bg-gray-50">
+                <FaApple />
+              </button>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE */}
+          <div className="hidden lg:flex lg:w-1/2 relative">
+            <div className="absolute inset-0 bg-[#0B3D71]">
+              <img
+                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c"
+                className="w-full h-full object-cover opacity-50"
+                alt=""
+              />
+            </div>
+
+            <div className="relative z-10 flex flex-col justify-center items-center text-white text-center p-12">
+              <h2 className="text-5xl font-bold mb-6">
+                مرحباً بك في <span className="text-[#1093ED]">Servixa</span>
+              </h2>
+
+              <p className="text-gray-200 max-w-md">
+                نحن هنا لنجعل منزلك أفضل مكان للراحة
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SignUp;
