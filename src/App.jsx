@@ -9,12 +9,14 @@ import Home from "./pages/home/Home";
 import Login from "./pages/login/Login";
 import SignUp from "./pages/signup/SignUp";
 import NotFound from "./pages/notFound/NotFound";
-import ClientProfile from "./pages/client/Client-Profile/ClientProfile";
 import Settings from "./pages/client/Settings/Settings";
 import Earnings from "./pages/worker/Earnings/Earnings";
-import WorkerProfile from "./pages/worker/Worker-Profile/WorkerProfile";
 import Overview from "./pages/admin/Overview/Overview";
 import Users from "./pages/admin/Users/Users";
+import ClientProfile from "./pages/client/Client-Profile/ClientProfile";
+import HomeProfile from "./pages/worker/Worker-Profile/home-prfile/HomeProfile";
+import Evaluations from "./pages/worker/Worker-Profile/evaluations/Evaluations";
+import WorksGallary from "./pages/worker/Worker-Profile/works-gallary/WorksGallary";
 
 const App = () => {
   return (
@@ -35,7 +37,9 @@ const App = () => {
         </Route>
 
         <Route path="/worker" element={<WorkerLayout />}>
-          <Route index element={<WorkerProfile />} />
+          <Route index element={<HomeProfile />} />
+          <Route path="evaluations" element={<Evaluations />} />
+          <Route path="business-gallary" element={<WorksGallary />} />
           <Route path="earnings" element={<Earnings />} />
         </Route>
 

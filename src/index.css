@@ -16,3 +16,7 @@ html[dir="rtl"] textarea {
   text-align: right;
   direction: rtl;
 }
+
+.btn-primary {
+  @apply bg-primary rounded-lg py-2 px-4 text-white hover:bg-blue-900 duration-300;
+}
