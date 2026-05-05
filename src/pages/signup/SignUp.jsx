@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import { UserIcon, EnvelopeIcon, EyeIcon } from "@heroicons/react/24/outline";
 import { FaFacebookF, FaGoogle, FaApple } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
+import SignupAndLogin from './../../components/common/SignupAndLogin';
+import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
 
 const SignUp = () => {
+  const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState({
     name: "",
     email: "",
@@ -13,7 +16,6 @@ const SignUp = () => {
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState({});
 
-  //  VALIDATION FUNCTION
   const validateField = (field, value) => {
     let error = "";
 
@@ -60,7 +62,6 @@ const SignUp = () => {
     }));
   };
 
-  const navigate= useNavigate()
   const submitUser = (e) => {
     e.preventDefault();
 
@@ -74,33 +75,23 @@ const SignUp = () => {
 
     if (Object.keys(newErrors).length > 0) return;
 
-    // navigate to next step after creating an acc
-    navigate('/login')
+    //  Save to localStorage
+  localStorage.setItem("signup_email", userInfo.email);
 
     console.log("VALID DATA:", userInfo);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans" dir="rtl">
-      
-      {/* NAVBAR */}
-      <nav className="w-full py-4 px-6 md:px-8 flex justify-between items-center bg-white shadow-sm">
-        <div className="text-2xl font-bold">
-          <span>Ser</span>
-          <span className="text-[#1093ED]">vixa</span>
-        </div>
-
-        <button className="bg-[#1093ED] text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-          تسجيل الدخول
-        </button>
-      </nav>
-
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans" >
+      <AuthNavbar/>
       {/* MAIN */}
-      <div className="flex-grow flex items-center justify-center p-4">
-        <div className="bg-white rounded-[40px] shadow-2xl flex flex-col lg:flex-row max-w-6xl w-full overflow-hidden min-h-[750px]">
-
+      <div className="mt-14 flex-grow flex items-center justify-center p-4 ">
+        <div className="bg-white rounded-[40px] shadow-2xl flex w-full max-w-6xl overflow-hidden min-h-[750px]">
+          {/* RIGHT SIDE */}
+          <SignupAndLogin />
+          
           {/* LEFT FORM */}
-          <div className="w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-center">
+          <div className="w-full lg:w-1/2 px-6 sm:px-10 lg:px-12 py-10 flex flex-col justify-center" dir="rtl">
 
             <h1 className="text-3xl font-bold mb-2">إنشاء حساب جديد</h1>
             <p className="text-gray-400 text-sm mb-8">
@@ -191,7 +182,8 @@ const SignUp = () => {
                 </div>
               </div>
 
-              <button className="w-full bg-[#1093ED] text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-600">
+              <button onClick={() => navigate("/account-type")}
+              className="w-full bg-[#1093ED] text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-600">
                 إنشاء الحساب
               </button>
             </form>
@@ -226,27 +218,6 @@ const SignUp = () => {
               <button className="flex-1 flex justify-center items-center py-3 border rounded-xl hover:bg-gray-50">
                 <FaApple />
               </button>
-            </div>
-          </div>
-
-          {/* RIGHT SIDE */}
-          <div className="hidden lg:flex lg:w-1/2 relative">
-            <div className="absolute inset-0 bg-[#0B3D71]">
-              <img
-                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c"
-                className="w-full h-full object-cover opacity-50"
-                alt=""
-              />
-            </div>
-
-            <div className="relative z-10 flex flex-col justify-center items-center text-white text-center p-12">
-              <h2 className="text-5xl font-bold mb-6">
-                مرحباً بك في <span className="text-[#1093ED]">Servixa</span>
-              </h2>
-
-              <p className="text-gray-200 max-w-md">
-                نحن هنا لنجعل منزلك أفضل مكان للراحة
-              </p>
             </div>
           </div>
 
