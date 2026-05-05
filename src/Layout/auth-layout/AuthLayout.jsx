@@ -9,5 +9,4 @@ const AuthLayout = () => {
 
   return <Outlet />
 }
-
 export default AuthLayout
