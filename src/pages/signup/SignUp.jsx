@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { UserIcon, EnvelopeIcon, EyeIcon } from "@heroicons/react/24/outline";
 import { FaFacebookF, FaGoogle, FaApple } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
+import SignupAndLogin from './../../components/common/SignupAndLogin';
 
 const SignUp = () => {
   const [userInfo, setUserInfo] = useState({
@@ -13,7 +14,6 @@ const SignUp = () => {
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState({});
 
-  //  VALIDATION FUNCTION
   const validateField = (field, value) => {
     let error = "";
 
@@ -75,32 +75,22 @@ const SignUp = () => {
     if (Object.keys(newErrors).length > 0) return;
 
     // navigate to next step after creating an acc
-    navigate('/login')
+    //  Save to localStorage
+  localStorage.setItem("signup_email", userInfo.email);
+  navigate("/personal-info");
 
     console.log("VALID DATA:", userInfo);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans" dir="rtl">
-      
-      {/* NAVBAR */}
-      <nav className="w-full py-4 px-6 md:px-8 flex justify-between items-center bg-white shadow-sm">
-        <div className="text-2xl font-bold">
-          <span>Ser</span>
-          <span className="text-[#1093ED]">vixa</span>
-        </div>
-
-        <button className="bg-[#1093ED] text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-          تسجيل الدخول
-        </button>
-      </nav>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans" >
 
       {/* MAIN */}
-      <div className="flex-grow flex items-center justify-center p-4">
+      <div className="flex-grow flex items-center justify-center p-4 ">
         <div className="bg-white rounded-[40px] shadow-2xl flex flex-col lg:flex-row max-w-6xl w-full overflow-hidden min-h-[750px]">
 
           {/* LEFT FORM */}
-          <div className="w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-center">
+          <div className="w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-center"  dir="rtl">
 
             <h1 className="text-3xl font-bold mb-2">إنشاء حساب جديد</h1>
             <p className="text-gray-400 text-sm mb-8">
@@ -230,25 +220,7 @@ const SignUp = () => {
           </div>
 
           {/* RIGHT SIDE */}
-          <div className="hidden lg:flex lg:w-1/2 relative">
-            <div className="absolute inset-0 bg-[#0B3D71]">
-              <img
-                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c"
-                className="w-full h-full object-cover opacity-50"
-                alt=""
-              />
-            </div>
-
-            <div className="relative z-10 flex flex-col justify-center items-center text-white text-center p-12">
-              <h2 className="text-5xl font-bold mb-6">
-                مرحباً بك في <span className="text-[#1093ED]">Servixa</span>
-              </h2>
-
-              <p className="text-gray-200 max-w-md">
-                نحن هنا لنجعل منزلك أفضل مكان للراحة
-              </p>
-            </div>
-          </div>
+          <SignupAndLogin />
 
         </div>
       </div>
