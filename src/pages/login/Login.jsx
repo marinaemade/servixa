@@ -3,6 +3,7 @@ import { jwtDecode } from "jwt-decode";
 import { EnvelopeIcon, EyeIcon, EyeSlashIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../context/Context";
 import SignupAndLogin from "../../components/common/SignupAndLogin";
+import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
 
 const Login = () => {
   const [userInfo, setUserInfo] = useState({
@@ -25,7 +26,7 @@ const Login = () => {
   const { login } = useAuth();
 
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -89,8 +90,13 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-3 sm:p-4 font-sans">
+  <>
+    <AuthNavbar/>
+    <div className="mt-14 min-h-screen flex items-center justify-center bg-gray-50 p-3 sm:p-4 font-sans">
       <div className="bg-white rounded-[30px] sm:rounded-[45px] shadow-sm border border-gray-700 flex w-full max-w-6xl overflow-hidden min-h-[600px] sm:min-h-[700px]">
+
+        {/* IMAGE SIDE — hidden on mobile */}
+        <SignupAndLogin />
 
         {/* FORM SIDE */}
         <div className="w-full md:w-1/2 flex flex-col justify-center px-5 sm:px-8 md:px-16 py-8 sm:py-10" dir="rtl">
@@ -203,11 +209,10 @@ const Login = () => {
           </div>
         </div>
 
-        {/* IMAGE SIDE — hidden on mobile */}
-
-          <SignupAndLogin />
+        
       </div>
     </div>
+  </>
   );
 };
 

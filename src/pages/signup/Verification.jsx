@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from "react-router-dom";
-import { 
-  ArrowRightIcon, 
+import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
+import{ArrowRightIcon, 
   ArrowLeftIcon, 
   CameraIcon,
   SunIcon,
@@ -30,9 +30,9 @@ const Verification = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4 font-sans" dir="rtl">
-      
+      <AuthNavbar/>
       {/* Progress Bar Container */}
-      <div className="w-full max-w-5xl mb-8">
+      <div className="w-full max-w-5xl mb-8 mt-14">
         <div className="flex justify-between items-center mb-4">
           <span className="text-[#1093ED] font-bold text-sm">الخطوة 2 من 4</span>
           <span className="text-gray-400 text-sm">توثيق الهوية</span>

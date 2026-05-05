@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
+import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
 import {
   ArrowLeftIcon,
   ChevronDownIcon,
@@ -29,9 +30,9 @@ const ScopeOfWork = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4 font-sans" dir="rtl">
-
+      <AuthNavbar/>
       {/* Progress Bar — Step 4 of 4 */}
-      <div className="w-full max-w-5xl mb-8">
+      <div className=" mt-14 w-full max-w-5xl mb-8">
         <div className="flex justify-between items-center mb-4">
           <span className="text-[#1093ED] font-bold text-sm">الخطوة 4 من 4</span>
           <span className="text-gray-400 text-sm">تحديد نطاق العمل</span>

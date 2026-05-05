@@ -3,8 +3,10 @@ import { UserIcon, EnvelopeIcon, EyeIcon } from "@heroicons/react/24/outline";
 import { FaFacebookF, FaGoogle, FaApple } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import SignupAndLogin from './../../components/common/SignupAndLogin';
+import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
 
 const SignUp = () => {
+  const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState({
     name: "",
     email: "",
@@ -60,7 +62,6 @@ const SignUp = () => {
     }));
   };
 
-  const navigate= useNavigate()
   const submitUser = (e) => {
     e.preventDefault();
 
@@ -74,23 +75,23 @@ const SignUp = () => {
 
     if (Object.keys(newErrors).length > 0) return;
 
-    // navigate to next step after creating an acc
     //  Save to localStorage
   localStorage.setItem("signup_email", userInfo.email);
-  navigate("/personal-info");
 
     console.log("VALID DATA:", userInfo);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans" >
-
+      <AuthNavbar/>
       {/* MAIN */}
-      <div className="flex-grow flex items-center justify-center p-4 ">
-        <div className="bg-white rounded-[40px] shadow-2xl flex flex-col lg:flex-row max-w-6xl w-full overflow-hidden min-h-[750px]">
-
+      <div className="mt-14 flex-grow flex items-center justify-center p-4 ">
+        <div className="bg-white rounded-[40px] shadow-2xl flex w-full max-w-6xl overflow-hidden min-h-[750px]">
+          {/* RIGHT SIDE */}
+          <SignupAndLogin />
+          
           {/* LEFT FORM */}
-          <div className="w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-center"  dir="rtl">
+          <div className="w-full lg:w-1/2 px-6 sm:px-10 lg:px-12 py-10 flex flex-col justify-center" dir="rtl">
 
             <h1 className="text-3xl font-bold mb-2">إنشاء حساب جديد</h1>
             <p className="text-gray-400 text-sm mb-8">
@@ -181,7 +182,8 @@ const SignUp = () => {
                 </div>
               </div>
 
-              <button className="w-full bg-[#1093ED] text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-600">
+              <button onClick={() => navigate("/account-type")}
+              className="w-full bg-[#1093ED] text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-600">
                 إنشاء الحساب
               </button>
             </form>
@@ -218,9 +220,6 @@ const SignUp = () => {
               </button>
             </div>
           </div>
-
-          {/* RIGHT SIDE */}
-          <SignupAndLogin />
 
         </div>
       </div>

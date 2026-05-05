@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ArrowRightIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
+import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
 
 const EmailVerification = () => {
   const [otp, setOtp] = useState(['', '', '', '']);
@@ -27,7 +28,7 @@ const EmailVerification = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4 font-sans" dir="rtl">
-      
+      <AuthNavbar/>
       {/* Progress Bar Container */}
       <div className="w-full max-w-5xl mb-8">
         <div className="flex justify-between items-center mb-4">

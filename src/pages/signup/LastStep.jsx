@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
 import {
   MapPinIcon,
   CameraIcon,
@@ -68,7 +69,7 @@ const LastStep = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans pb-24" dir="rtl">
-
+      <AuthNavbar/>
       {/* ── Header ── */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-10 pb-6">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 text-right mb-1">

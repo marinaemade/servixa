@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
+import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
 import { 
   ArrowLeftIcon, 
   CalendarIcon, 
@@ -36,7 +37,7 @@ const PersonalInfo = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4 font-sans" dir="rtl">
-      
+      <AuthNavbar/>
       {/* Progress Bar */}
       <div className="w-full max-w-5xl mb-8">
         <div className="flex justify-between items-center mb-4">
