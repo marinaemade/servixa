@@ -2,7 +2,7 @@ import React from 'react'
 
 const SignupAndLogin = () => {
   return (
-    <div className="hidden md:flex md:w-1/2 relative bg-[#0B3D71]">
+    <div className="hidden lg:flex lg:w-1/2 relative bg-[#0B3D71]">
       {/* Background image */}
       <div className="absolute inset-0">
         <img

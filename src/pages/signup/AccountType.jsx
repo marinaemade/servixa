@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/solid';
 import { Link, useNavigate } from 'react-router-dom';
+import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
 
 const AccountType = () => {
   const [role, setRole] = useState(null);
@@ -17,7 +18,7 @@ const AccountType = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 font-sans" dir="rtl">
-      
+      <AuthNavbar/>
       {/* Header Section */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-extrabold text-gray-800 mb-4">اختر نوع الحساب</h1>
