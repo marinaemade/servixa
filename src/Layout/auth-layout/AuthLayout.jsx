@@ -1,12 +1,13 @@
-import React from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, Navigate } from 'react-router-dom'
+import { useAuth } from '../../context/Context'
 
 const AuthLayout = () => {
-  return (
-    <div>
-      <Outlet />
-    </div>
-  )
+  const { user } = useAuth()
+
+  // Already logged in? send them home
+  if (user) return <Navigate to="/" replace />
+
+  return <Outlet />
 }
 
 export default AuthLayout
