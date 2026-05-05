@@ -4,7 +4,7 @@ import Header from '../../components/layout/home-navbar/Header'
 import Footer from '../../components/layout/home-footer/Footer'
 const MainLayout = () => {
   return (
-    <div className='rtl'>
+    <div>
       <Header />
       <Outlet />
       <Footer />
