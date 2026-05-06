@@ -5,7 +5,7 @@ const AuthLayout = () => {
   const { user } = useAuth()
 
   // Already logged in? send them home
-  if (user) return <Navigate to="/" replace />
+  // if (user) return <Navigate to="/" replace />
 
   return <Outlet />
 }
