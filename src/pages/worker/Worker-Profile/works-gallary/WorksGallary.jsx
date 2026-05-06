@@ -1,7 +1,11 @@
+import WorkerCover from "../components/WorkerCover"
 
 const WorksGallary = () => {
   return (
-    <div>WorksGallary</div>
+    <div>
+      <WorkerCover />
+      portfolio
+    </div>
   )
 }
 

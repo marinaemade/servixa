@@ -22,6 +22,8 @@ import ScopeOfWork from './pages/signup/ScopeOfWork';
 import LastStep from './pages/signup/LastStep';
 import ProtectedLayout from "./Layout/protected-layout/ProtectedLayout";
 import HomeProfile from "./pages/worker/Worker-Profile/home-prfile/HomeProfile";
+import Evaluations from "./pages/worker/Worker-Profile/evaluations/Evaluations"
+import WorksGallary from "./pages/worker/Worker-Profile/works-gallary/WorksGallary"
 
 
 const App = () => {
@@ -44,7 +46,6 @@ const App = () => {
 
         </Route>
 
-        {/* CHANGED: wrapped with ProtectedLayout */}
         <Route element={<ProtectedLayout allowedRole="client" />}>
           <Route path="/client" element={<ClientLayout />}>
             <Route index element={<ClientProfile />} />
@@ -53,8 +54,10 @@ const App = () => {
         </Route>
 
         <Route element={<ProtectedLayout allowedRole="worker" />}>
-          <Route path="/worker" element={<WorkerLayout />}>
+          <Route path="/worker-profile" element={<WorkerLayout />}>
             <Route index element={<HomeProfile />} />
+            <Route path="reviews" element={<Evaluations />}/>
+            <Route path="portfolio" element={<WorksGallary />}/>
             <Route path="earnings" element={<Earnings />} />
           </Route>
         </Route>
