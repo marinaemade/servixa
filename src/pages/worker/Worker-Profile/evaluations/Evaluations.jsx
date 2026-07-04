@@ -10,10 +10,10 @@ const Evaluations = () => {
   return (
     <div>
       <WorkerCover />
-      <div className="grid grid-cols-3 gap-5 my-5 px-2 md:px-5 items-start">
-        <div className="grid grid-cols-2 col-span-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 my-5 px-2 md:px-5 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:col-span-2 gap-5">
 
-          <div className="bg-gray-100 rounded-xl border border-[#C4C4C4] p-6 col-span-1">
+          <div className="bg-bg-color rounded-xl border border-border-color p-6 col-span-1">
             <div className="text-center mb-4">
               <div className="text-5xl font-bold text-primary">4.8</div>
               <div className="flex justify-center mt-1 gap-0.5">
@@ -79,7 +79,7 @@ const Evaluations = () => {
             </div>
           </div>
           {/* reviews details */}
-          <div className="bg-gray-100 rounded-xl border border-[#C4C4C4] p-6 col-span-1">
+          <div className="bg-bg-color rounded-xl border border-border-color p-6 col-span-1">
             <h2 className="text-lg">تفاصيل التقييم</h2>
             <div className="flex mt-10 md:mt-12 justify-around ">
               <div className="flex flex-col items-center justify-center text-center">
@@ -125,7 +125,7 @@ const Evaluations = () => {
           </div>
           {/* Clients reviews */}
           <h2 className="mt-4 text-xl font-semibold">تقييمات العملاء</h2>
-          <div className="bg-gray-100 rounded-xl border border-[#C4C4C4] p-6 col-span-2">
+          <div className="bg-bg-color rounded-xl border border-border-color p-6 col-span-1 md:col-span-2">
             <div className="flex gap-2 items-center">
               <FaUserCircle className="text-3xl" />
               <div className="flex flex-col items-start">
@@ -179,7 +179,7 @@ const Evaluations = () => {
             </div>
           </div>
         </div>
-        <WorkerStatistics className="col-span-1" />
+        <WorkerStatistics />
       </div>
     </div>
   );
