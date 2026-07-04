@@ -3,8 +3,8 @@ import { IoMdStar } from "react-icons/io";
 
 const WorkerStatistics = () => {
   return (
-    <div className="space-y-4">
-      <div className="bg-gray-100 rounded-2xl border border-[#C4C4C4] p-5">
+    <div className="space-y-4 col-span-1 md:col-span-2 lg:col-span-1">
+      <div className="bg-bg-color rounded-2xl border border-border-color p-5">
         <div className="flex items-center gap-2 mb-5">
           <h3 className="text-lg font-bold text-foreground">الإحصائيات</h3>
           <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">

@@ -1,12 +1,14 @@
 import { HiBriefcase, HiCheckBadge, HiMapPin } from "react-icons/hi2";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 
 const WorkerCover = () => {
   return (
-    <div className=" pt-8 px-2 md:px-5">
-      <div className="bg-gray-100 flex flex-col border border-[#C4C4C4] rounded-xl">
+    <div className="pt-8 px-2 md:px-5">
+      <div className="bg-secondary flex flex-col border border-border-color rounded-xl">
         <div className="text-end pt-3 pl-3">
-          <button className="btn-primary">تعديل الحساب</button>
+          <Link to="/worker-profile/edit-profile">
+            <button className="btn-primary">تعديل الحساب</button>
+          </Link>
         </div>
         <div className="self-center">
           <div className="flex flex-col items-center">
@@ -38,7 +40,7 @@ const WorkerCover = () => {
             </div>
           </div>
         </div>
-        <div className="flex w-fit bg-[#E7EBEE] p-1 rounded-xl gap-6 mt-12">
+        <div className="grid-cols-2 sm:grid-cols-3 grid w-full sm:w-fit gap-2 bg-[#E7EBEE] p-1 rounded-xl mt-12">
           <NavLink
             to="/worker-profile"
             end
@@ -69,7 +71,7 @@ const WorkerCover = () => {
             to="/worker-profile/portfolio"
             end
             className={({ isActive }) =>
-              `px-4 py-2 rounded-lg duration-150 text-md font-normal ${
+              `px-4 py-2 rounded-lg duration-150 text-md font-normal col-span-2 text-center sm:col-span-1 ${
                 isActive
                   ? "bg-white text-primary text-lg"
                   : "text-gray-800 hover:bg-white hover:text-primary"

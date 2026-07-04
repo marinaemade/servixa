@@ -10,7 +10,10 @@ module.exports = withMT({
   theme: {
     extend: {
       colors: {
-        "primary" : "#0a89eb"
+        "primary": "#0A89EB",
+        "secondary": "#FFFFFF",
+        "border-color": "#E0E0E0",
+        "bg-color": "#FBFBFB"
       },
       fontFamily: {
         cairo: ['Cairo', 'sans-serif'],

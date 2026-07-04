@@ -24,6 +24,8 @@ import ProtectedLayout from "./Layout/protected-layout/ProtectedLayout";
 import HomeProfile from "./pages/worker/Worker-Profile/home-prfile/HomeProfile";
 import Evaluations from "./pages/worker/Worker-Profile/evaluations/Evaluations"
 import WorksGallary from "./pages/worker/Worker-Profile/works-gallary/WorksGallary"
+import EditWorkerProfile from "./pages/worker/Worker-Profile/edit-profile/EditWorkerProfile";
+import AddProject from "./pages/worker/Worker-Profile/add-prject/AddProject";
 
 
 const App = () => {
@@ -53,14 +55,16 @@ const App = () => {
           </Route>
         </Route>
 
-        <Route element={<ProtectedLayout allowedRole="worker" />}>
+        {/* <Route element={<ProtectedLayout allowedRole="worker" />}> */}
           <Route path="/worker-profile" element={<WorkerLayout />}>
             <Route index element={<HomeProfile />} />
             <Route path="reviews" element={<Evaluations />}/>
             <Route path="portfolio" element={<WorksGallary />}/>
+            <Route path="edit-profile" element={<EditWorkerProfile />} />
+            <Route path="add-project" element={<AddProject />} />
             <Route path="earnings" element={<Earnings />} />
           </Route>
-        </Route>
+        {/* </Route> */}
 
         <Route element={<ProtectedLayout allowedRole="admin" />}>
           <Route path="/admin" element={<AdminLayout />}>
