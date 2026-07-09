@@ -21,6 +21,14 @@ import EmailVerification from './pages/signup/EmailVerification';
 import ScopeOfWork from './pages/signup/ScopeOfWork';
 import LastStep from './pages/signup/LastStep';
 import ProtectedLayout from "./Layout/protected-layout/ProtectedLayout";
+
+import ServiceRequestForm from './pages/client/ServiceRequestForm';
+import Wallet from './pages/client/Wallet/Wallet';
+import ChargeWallet from './pages/client/Wallet/ChargeWallet';
+import MainPage from './pages/client/Client-Profile/MainPage';
+import ClientProjects from './pages/client/Client-Profile/ClientProjects';
+import Services from './pages/client/Workers/Services';
+import Workers from './pages/client/Workers/Workers';
 import HomeProfile from "./pages/worker/Worker-Profile/home-prfile/HomeProfile";
 import Evaluations from "./pages/worker/Worker-Profile/evaluations/Evaluations"
 import WorksGallary from "./pages/worker/Worker-Profile/works-gallary/WorksGallary"
@@ -45,15 +53,23 @@ const App = () => {
           <Route path="/EmailVerification" element={<EmailVerification />} />
           <Route path="/ScopeOfWork" element={<ScopeOfWork />} />
           <Route path="/LastStep" element={<LastStep />} />
-
         </Route>
 
-        <Route element={<ProtectedLayout allowedRole="client" />}>
+
+        {/* CHANGED: wrapped with ProtectedLayout */}
+        {/* <Route element={<ProtectedLayout allowedRole="client" />}> */}
           <Route path="/client" element={<ClientLayout />}>
             <Route index element={<ClientProfile />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="main-page" element={<MainPage />} />
+            <Route path="projects" element={<ClientProjects />} />
+            <Route path="wallet" element={<Wallet />} />
+            <Route path="charge-wallet" element={<ChargeWallet />} />
+            <Route path="services" element={<Services />} />
+            <Route path="workers" element={<Workers />} />
+            <Route path="request-service" element={<ServiceRequestForm />} />
           </Route>
-        </Route>
+        {/* </Route> */}
 
         {/* <Route element={<ProtectedLayout allowedRole="worker" />}> */}
           <Route path="/worker-profile" element={<WorkerLayout />}>
