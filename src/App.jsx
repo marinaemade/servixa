@@ -22,6 +22,13 @@ import EmailVerification from './pages/signup/EmailVerification';
 import ScopeOfWork from './pages/signup/ScopeOfWork';
 import LastStep from './pages/signup/LastStep';
 import ProtectedLayout from "./Layout/protected-layout/ProtectedLayout";
+import ServiceRequestForm from './pages/client/ServiceRequestForm';
+import Wallet from './pages/client/Wallet/Wallet';
+import ChargeWallet from './pages/client/Wallet/ChargeWallet';
+import MainPage from './pages/client/Client-Profile/MainPage';
+import ClientProjects from './pages/client/Client-Profile/ClientProjects';
+import Services from './pages/client/Workers/Services';
+import Workers from './pages/client/Workers/Workers';
 
 const App = () => {
   return (
@@ -44,19 +51,26 @@ const App = () => {
         </Route>
 
         {/* CHANGED: wrapped with ProtectedLayout */}
-        <Route element={<ProtectedLayout allowedRole="client" />}>
+        {/* <Route element={<ProtectedLayout allowedRole="client" />}> */}
           <Route path="/client" element={<ClientLayout />}>
             <Route index element={<ClientProfile />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="main-page" element={<MainPage />} />
+            <Route path="projects" element={<ClientProjects />} />
+            <Route path="wallet" element={<Wallet />} />
+            <Route path="charge-wallet" element={<ChargeWallet />} />
+            <Route path="services" element={<Services />} />
+            <Route path="workers" element={<Workers />} />
+            <Route path="request-service" element={<ServiceRequestForm />} />
           </Route>
-        </Route>
+        {/* </Route> */}
 
-        <Route element={<ProtectedLayout allowedRole="worker" />}>
+        {/* <Route element={<ProtectedLayout allowedRole="worker" />}> */}
           <Route path="/worker" element={<WorkerLayout />}>
             <Route index element={<WorkerProfile />} />
             <Route path="earnings" element={<Earnings />} />
           </Route>
-        </Route>
+        {/* </Route> */}
 
         <Route element={<ProtectedLayout allowedRole="admin" />}>
           <Route path="/admin" element={<AdminLayout />}>
