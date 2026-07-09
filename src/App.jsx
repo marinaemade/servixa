@@ -3,16 +3,15 @@ import { Routes, Route } from "react-router-dom";
 import MainLayout from "./Layout/Main-Layout/MainLayout";
 import AuthLayout from "./Layout/auth-layout/AuthLayout";
 import ClientLayout from "./Layout/client-layout/ClientLayout";
+import ClientProfile from "./pages/client/Client-Profile/ClientProfile"
 import WorkerLayout from "./Layout/Worker-Layout/WorkerLayout";
 import AdminLayout from "./Layout/Admin-Layout/AdminLayout";
 import Home from "./pages/home/Home";
 import Login from "./pages/login/Login";
 import SignUp from "./pages/signup/SignUp";
 import NotFound from "./pages/notFound/NotFound";
-import ClientProfile from "./pages/client/Client-Profile/ClientProfile";
 import Settings from "./pages/client/Settings/Settings";
 import Earnings from "./pages/worker/Earnings/Earnings";
-import WorkerProfile from "./pages/worker/Worker-Profile/WorkerProfile";
 import Overview from "./pages/admin/Overview/Overview";
 import Users from "./pages/admin/Users/Users";
 import AccountType from './pages/signup/AccountType';
@@ -22,6 +21,7 @@ import EmailVerification from './pages/signup/EmailVerification';
 import ScopeOfWork from './pages/signup/ScopeOfWork';
 import LastStep from './pages/signup/LastStep';
 import ProtectedLayout from "./Layout/protected-layout/ProtectedLayout";
+
 import ServiceRequestForm from './pages/client/ServiceRequestForm';
 import Wallet from './pages/client/Wallet/Wallet';
 import ChargeWallet from './pages/client/Wallet/ChargeWallet';
@@ -29,6 +29,12 @@ import MainPage from './pages/client/Client-Profile/MainPage';
 import ClientProjects from './pages/client/Client-Profile/ClientProjects';
 import Services from './pages/client/Workers/Services';
 import Workers from './pages/client/Workers/Workers';
+import HomeProfile from "./pages/worker/Worker-Profile/home-prfile/HomeProfile";
+import Evaluations from "./pages/worker/Worker-Profile/evaluations/Evaluations"
+import WorksGallary from "./pages/worker/Worker-Profile/works-gallary/WorksGallary"
+import EditWorkerProfile from "./pages/worker/Worker-Profile/edit-profile/EditWorkerProfile";
+import AddProject from "./pages/worker/Worker-Profile/add-prject/AddProject";
+
 
 const App = () => {
   return (
@@ -47,8 +53,8 @@ const App = () => {
           <Route path="/EmailVerification" element={<EmailVerification />} />
           <Route path="/ScopeOfWork" element={<ScopeOfWork />} />
           <Route path="/LastStep" element={<LastStep />} />
-
         </Route>
+
 
         {/* CHANGED: wrapped with ProtectedLayout */}
         {/* <Route element={<ProtectedLayout allowedRole="client" />}> */}
@@ -66,8 +72,12 @@ const App = () => {
         {/* </Route> */}
 
         {/* <Route element={<ProtectedLayout allowedRole="worker" />}> */}
-          <Route path="/worker" element={<WorkerLayout />}>
-            <Route index element={<WorkerProfile />} />
+          <Route path="/worker-profile" element={<WorkerLayout />}>
+            <Route index element={<HomeProfile />} />
+            <Route path="reviews" element={<Evaluations />}/>
+            <Route path="portfolio" element={<WorksGallary />}/>
+            <Route path="edit-profile" element={<EditWorkerProfile />} />
+            <Route path="add-project" element={<AddProject />} />
             <Route path="earnings" element={<Earnings />} />
           </Route>
         {/* </Route> */}

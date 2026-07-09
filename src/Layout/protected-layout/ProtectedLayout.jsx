@@ -4,8 +4,8 @@ import { useAuth } from '../../context/Context'
 const ProtectedLayout = ({ allowedRole }) => {
   const { user } = useAuth()
 
-  if (!user) return <Navigate to="/login" replace />
-  if (allowedRole && user.role !== allowedRole) return <Navigate to="/" replace />
+  if (!user) return <Navigate to="/login"  />
+  if (allowedRole && user.role !== allowedRole) return <Navigate to="/"  />
 
   return <Outlet />
 }
