@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
 import { 
@@ -7,37 +7,52 @@ import {
   CheckCircleIcon 
 } from '@heroicons/react/24/outline';
 
+const PHONE_PREFIXES = ["010", "011", "012", "015"];
+
 const PersonalInfo = () => {
-  const [gender, setGender] = useState('male');
-  const [countries, setCountries] = useState([]);
-  const [selectedCode, setSelectedCode] = useState("+966");
-
-  const emailFromStorage = localStorage.getItem("signup_email") || "";
   const navigate = useNavigate();
+  const emailFromStorage = localStorage.getItem("signup_email") || "";
 
- useEffect(() => {
-  fetch("https://restcountries.com/v3.1/all?fields=name,idd,flag")
-    .then((res) => res.json())
-    .then((data) => {
-      const codes = data
-        .filter((c) => c.idd?.root)
-        .map((c) => ({
-          name: c.name.common,
-          flag: c.flag,
-          code: c.idd.root + (c.idd.suffixes?.[0] || ""),
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
+  const [formData, setFormData] = useState({
+    fullName: '',
+    birthDate: '',
+    nationality: '',
+    job: '',
+    phone: ''
+  });
+  const [gender, setGender] = useState('male');
+  const [selectedCode, setSelectedCode] = useState("010"); // القيمة الافتراضية الأولى
+  const [error, setError] = useState("");
 
-      setCountries(codes);
-    })
-    .catch((err) => {
-      console.error(err);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!formData.fullName.trim()) return setError("الرجاء إدخال الاسم بالكامل");
+    if (!formData.birthDate) return setError("الرجاء تحديد تاريخ الميلاد");
+    if (!formData.nationality.trim()) return setError("الرجاء إدخال الجنسية");
+    if (!formData.job.trim()) return setError("الرجاء إدخال الوظيفة");
+    if (!formData.phone.trim()) return setError("الرجاء إدخال رقم الجوال");
+
+    console.log("Submitting Data:", { 
+      ...formData, 
+      gender, 
+      phonePrefix: selectedCode, 
+      fullPhoneNumber: selectedCode + formData.phone,
+      email: emailFromStorage 
     });
-}, []);
+    navigate("/verification");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4 font-sans" dir="rtl">
       <AuthNavbar/>
+      
       {/* Progress Bar */}
       <div className="w-full max-w-5xl mb-8">
         <div className="flex justify-between items-center mb-4">
@@ -52,7 +67,7 @@ const PersonalInfo = () => {
         </div>
       </div>
 
-      {/* Form */}
+      {/* Form Container */}
       <div className="bg-white rounded-[45px] shadow-sm border border-gray-500 w-full max-w-5xl p-8 md:p-14 relative">
 
         {/* Header */}
@@ -65,13 +80,23 @@ const PersonalInfo = () => {
           </p>
         </div>
 
-        <form className="space-y-8">
+        {/* رسالة الخطأ إن وجدت */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl font-bold text-sm text-center">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-8">
           
           {/* Full Name */}
           <div className="space-y-2">
             <label className="block text-sm font-bold text-gray-600">الاسم بالكامل</label>
             <input 
               type="text" 
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
               placeholder="أدخل اسمك كما يظهر في بطاقة الهوية" 
               className="w-full px-6 py-4 bg-gray-50 border border-gray-500 rounded-2xl outline-none focus:border-[#1093ED] text-right"
             />
@@ -88,6 +113,9 @@ const PersonalInfo = () => {
                 <CalendarIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 <input
                   type="date"
+                  name="birthDate"
+                  value={formData.birthDate}
+                  onChange={handleChange}
                   className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-500 rounded-2xl outline-none focus:border-[#1093ED]"
                 />
               </div>
@@ -111,13 +139,27 @@ const PersonalInfo = () => {
             {/* Nationality */}
             <div className="space-y-2"> 
               <label className="block text-sm font-bold text-gray-600 mr-2">الجنسية</label> 
-              <input type="text" placeholder="المملكة العربية السعودية" className="w-full px-6 py-4 bg-gray-50 border border-gray-500 rounded-2xl outline-none focus:border-[#1093ED] text-right" />
+              <input 
+                type="text" 
+                name="nationality"
+                value={formData.nationality}
+                onChange={handleChange}
+                placeholder="المملكة العربية السعودية" 
+                className="w-full px-6 py-4 bg-gray-50 border border-gray-500 rounded-2xl outline-none focus:border-[#1093ED] text-right" 
+              />
             </div>
             
             {/* Job */} 
             <div className="space-y-2"> 
               <label className="block text-sm font-bold text-gray-600 mr-2">الوظيفة</label> 
-              <input type="text" placeholder="مثال: سباك أو نجار" className="w-full px-6 py-4 bg-gray-50 border border-gray-500 rounded-2xl outline-none focus:border-[#1093ED] text-right" /> 
+              <input 
+                type="text" 
+                name="job"
+                value={formData.job}
+                onChange={handleChange}
+                placeholder="مثال: سباك أو نجار" 
+                className="w-full px-6 py-4 bg-gray-50 border border-gray-500 rounded-2xl outline-none focus:border-[#1093ED] text-right" 
+              /> 
             </div>
 
             {/* Email */}
@@ -135,46 +177,43 @@ const PersonalInfo = () => {
             </div>
 
             {/* Phone */}
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-600">
-                  رقم الجوال
-                </label>
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-gray-600">
+                رقم الجوال
+              </label>
 
-                <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Prefix Code Selection */}
+                <select
+                  value={selectedCode}
+                  onChange={(e) => setSelectedCode(e.target.value)}
+                  className="w-full sm:w-36 bg-gray-50 border border-gray-300 rounded-2xl px-3 py-4 outline-none focus:border-[#1093ED] text-center font-bold"
+                >
+                  {PHONE_PREFIXES.map((prefix, i) => (
+                    <option key={i} value={prefix}>
+                      {prefix}
+                    </option>
+                  ))}
+                </select>
 
-                  {/* Country Code */}
-                  <select
-                    value={selectedCode}
-                    onChange={(e) => setSelectedCode(e.target.value)}
-                    className="w-full sm:w-36 bg-gray-50 border border-gray-300 rounded-2xl px-3 py-4 outline-none focus:border-[#1093ED]"
-                  >
-                    {countries.length === 0 ? (
-                      <option>Loading...</option>
-                    ) : (
-                      countries.map((c, i) => (
-                        <option key={i} value={c.code}>
-                          {c.flag} {c.code}
-                        </option>
-                      ))
-                    )}
-                  </select>
-
-                  {/* Phone Input */}
-                  <input
-                    type="tel"
-                    placeholder="5XXXXXXXX"
-                    className="w-full px-6 py-4 bg-gray-50 border border-gray-300 rounded-2xl outline-none focus:border-[#1093ED] text-left"
-                  />
-                </div>
+                {/* Phone Input */}
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="XXXXXXX"
+                  className="w-full px-6 py-4 bg-gray-50 border border-gray-300 rounded-2xl outline-none focus:border-[#1093ED] text-left"
+                />
               </div>
+            </div>
           </div>
 
-          {/* Buttons  */}
+          {/* Buttons */}
           <div className="border-t border-gray-500 pt-10 mt-10 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-start">
             
             <button
-              type="button"
-              onClick={() => navigate("/verification")}
+              type="submit"
               className="w-full sm:w-auto bg-[#1093ED] text-white px-10 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-100 hover:bg-blue-600 transition-all"
             >
               <span>استمرار</span>

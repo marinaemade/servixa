@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
-import{ArrowRightIcon, 
+import { 
+  ArrowRightIcon, 
   ArrowLeftIcon, 
   CameraIcon,
   SunIcon,
@@ -18,19 +19,38 @@ const Verification = () => {
   // State to store the selected files
   const [frontImage, setFrontImage] = useState(null);
   const [backImage, setBackImage] = useState(null);
+  const [error, setError] = useState(""); // إضافة حالة لإظهار الخطأ عند عدم رفع الصور
 
   const handleFileChange = (event, side) => {
     const file = event.target.files[0];
     if (file) {
       if (side === 'front') setFrontImage(file);
       else setBackImage(file);
+      setError(""); // تصفية الخطأ بمجرد اختيار صورة
       console.log(`${side} file selected:`, file.name);
     }
+  };
+
+  // دالة التحقق من رفع الصور قبل الانتقال
+  const handleNextStep = () => {
+    setError("");
+
+    if (!frontImage) {
+      return setError("الرجاء رفع صورة الوجه الأمامي لبطاقة الهوية أولاً");
+    }
+    if (!backImage) {
+      return setError("الرجاء رفع صورة الوجه الخلفي لبطاقة الهوية أولاً");
+    }
+
+    // إذا تم رفع الصورتين بنجاح، يتم الانتقال
+    console.log("Images uploaded successfully:", { frontImage, backImage });
+    navigate("/EmailVerification");
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4 font-sans" dir="rtl">
       <AuthNavbar/>
+      
       {/* Progress Bar Container */}
       <div className="w-full max-w-5xl mb-8 mt-14">
         <div className="flex justify-between items-center mb-4">
@@ -58,6 +78,13 @@ const Verification = () => {
           </p>
         </div>
 
+        {/* رسالة الخطأ في حال عدم رفع الصور */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl font-bold text-sm text-center">
+            {error}
+          </div>
+        )}
+
         {/* Instructions Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="border border-gray-500 rounded-3xl p-6 flex flex-col items-center text-center">
@@ -77,7 +104,7 @@ const Verification = () => {
           </div>
 
           <div className="border border-gray-500 rounded-3xl p-6 flex flex-col items-center text-center">
-            <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mb-4 text-orange6400">
+            <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mb-4 text-orange-400">
               <ArrowsPointingOutIcon className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-gray-800 text-sm mb-1">كامل البطاقة</h3>
@@ -94,7 +121,7 @@ const Verification = () => {
               <label className="font-bold text-gray-700 text-sm">الوجه الأمامي لبطاقة الهوية</label>
             </div>
 
-            {/* 3. Hidden File Input */}
+            {/* Hidden File Input */}
             <input 
               type="file" 
               ref={frontInputRef}
@@ -103,7 +130,7 @@ const Verification = () => {
               className="hidden" 
             />
 
-            {/* 4. Clickable UI Area */}
+            {/* Clickable UI Area */}
             <div 
               onClick={() => frontInputRef.current.click()}
               className="border-2 border-dashed border-gray-200 rounded-[35px] py-12 flex flex-col items-center justify-center bg-gray-50/30 hover:bg-gray-50 transition-all cursor-pointer group"
@@ -155,16 +182,16 @@ const Verification = () => {
             <span>بياناتك مشفرة وآمنة تماماً</span>
           </div>
           <p className="text-[11px] text-gray-400 max-w-md">
-            نحن نستخدم أعلى معايير التشفير (AES-256) لحماية معلوماتك الشخصية بموجب سياسة الخصوصية.
+            نستخدم أعلى معايير التشفير (AES-256) لحماية معلوماتك الشخصية بموجب سياسة الخصوصية.
           </p>
         </div>
 
-        {/* Buttons  */}
+        {/* Buttons */}
         <div className="border-t border-gray-500 pt-10 mt-10 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-start">
           
           <button
             type="button"
-            onClick={() => navigate("/EmailVerification")}
+            onClick={handleNextStep}
             className="w-full sm:w-auto bg-[#1093ED] text-white px-10 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-100 hover:bg-blue-600 transition-all"
           >
             <span>استمرار</span>

@@ -21,6 +21,9 @@ const LastStep = () => {
   const [profilePhoto, setProfilePhoto] = useState(null);
   const profileInputRef = useRef();
 
+  // Error State
+  const [error, setError] = useState('');
+
   // Skills
   const [skills, setSkills] = useState(['تركيب خلاطات', 'تسليك مواسير']);
   const [skillInput, setSkillInput] = useState('');
@@ -35,7 +38,10 @@ const LastStep = () => {
   // Handlers
   const handleProfilePhoto = (e) => {
     const file = e.target.files[0];
-    if (file) setProfilePhoto(URL.createObjectURL(file));
+    if (file) {
+      setProfilePhoto(URL.createObjectURL(file));
+      setError(''); 
+    }
   };
 
   const addSkill = () => {
@@ -63,8 +69,28 @@ const LastStep = () => {
     setPortfolio(portfolio.filter((_, i) => i !== index));
 
   const handleSave = () => {
-    console.log({ bio, profilePhoto, skills, portfolio });
-    // navigate('/dashboard');
+    setError('');
+
+    if (!profilePhoto) {
+      setError('الرجاء رفع صورة الحساب الشخصية أولاً للاستمرار');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    console.log("Saving profile data:", { bio, profilePhoto, skills, portfolio });
+
+    // 1. قراءة المفتاح الصحيح الموحد 'userRole'
+    const userRole = localStorage.getItem('userRole'); 
+
+    // 2. التوجيه بناءً على القيم الفعلية المخزنة ('provider' أو 'customer')
+    if (userRole === 'provider') {
+      navigate('/worker-profile');
+    } else if (userRole === 'customer') {
+      navigate('/client'); // أو '/client-profile' حسب مسار الصفحة لديك
+    } else {
+      console.warn("Account type (userRole) not found in localStorage, navigating to dashboard");
+      navigate('/dashboard'); 
+    }
   };
 
   return (
@@ -85,6 +111,13 @@ const LastStep = () => {
 
         {/* ── LEFT COLUMN (col-span-2) ── */}
         <div className="lg:col-span-2 space-y-5">
+
+          {/* رسالة الخطأ عند عدم رفع الصورة */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-3xl font-bold text-sm text-center">
+              {error}
+            </div>
+          )}
 
           {/* بنبذة عني */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
@@ -267,7 +300,7 @@ const LastStep = () => {
             className="flex items-center gap-2 bg-[#1093ED] text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-blue-600 active:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
           >
             <ArrowRightIcon className="w-4 h-4" />
-            <span>حفظ</span>
+            <span>حفظ واستمرار</span>
           </button>
 
           {/* Left: status */}

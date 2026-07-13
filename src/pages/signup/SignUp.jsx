@@ -79,6 +79,7 @@ const SignUp = () => {
   localStorage.setItem("signup_email", userInfo.email);
 
     console.log("VALID DATA:", userInfo);
+    navigate("/account-type");
   };
 
   return (
@@ -182,7 +183,7 @@ const SignUp = () => {
                 </div>
               </div>
 
-              <button onClick={() => navigate("/account-type")}
+              <button type="submit"
               className="w-full bg-[#1093ED] text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-600">
                 إنشاء الحساب
               </button>
