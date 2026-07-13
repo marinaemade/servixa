@@ -6,7 +6,7 @@ const SignupAndLogin = () => {
       {/* Background image */}
       <div className="absolute inset-0">
         <img
-          src="../../../public/loginImage.png"
+          src="/loginImage.png"
           alt="Servixa Interior"
           className="w-full h-full object-cover opacity-60"
         />

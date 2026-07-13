@@ -9,11 +9,8 @@ const AccountType = () => {
 
   const handleSelect = (selectedRole) => {
     setRole(selectedRole);
-
-    // store + navigate to next step
-    navigate("/personal-info", {
-      state: { role: selectedRole }
-    });
+    localStorage.setItem('userRole', selectedRole); 
+    navigate("/personal-info");
   };
 
   return (
