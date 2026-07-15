@@ -1,32 +1,25 @@
-import React, { useContext, useState } from "react";
-import { jwtDecode } from "jwt-decode";
+import React, { useState } from "react";
 import { EnvelopeIcon, EyeIcon, EyeSlashIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/Context";
+import api from "../../api/api";
 import SignupAndLogin from "../../components/common/SignupAndLogin";
-import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
+import AuthNavbar from "./../../components/layout/auth-navbar/AuthNavbar";
+
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
 
 const Login = () => {
-  const [userInfo, setUserInfo] = useState({
-    email: "",
-    password: "",
-  });
-
-  const [errors, setErrors] = useState({
-    email: false,
-    password: false,
-  });
-
-  const [errorMessages, setErrorMessages] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [userInfo, setUserInfo] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({ email: false, password: false });
+  const [errorMessages, setErrorMessages] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const { login } = useAuth();
-
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const successMessage = location.state?.message;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,16 +38,13 @@ const Login = () => {
 
   const getPasswordError = (password) => {
     if (!password) return "كلمة المرور مطلوبة";
-    if (password.length < 8) return "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
-    if (!/(?=.*[a-z])/.test(password)) return "يجب أن تحتوي على حرف صغير";
-    if (!/(?=.*[A-Z])/.test(password)) return "يجب أن تحتوي على حرف كبير";
-    if (!/(?=.*\d)/.test(password)) return "يجب أن تحتوي على رقم";
-    if (!/(?=.*[@$!%*?&])/.test(password)) return "يجب أن تحتوي على رمز خاص (@$!%*?&)";
     return "";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError("");
+
     const emailError = getEmailError(userInfo.email);
     const passwordError = getPasswordError(userInfo.password);
 
@@ -64,155 +54,162 @@ const Login = () => {
       return;
     }
 
+    setSubmitting(true);
     try {
-      const res = await fetch("https://dummyjson.com/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userInfo),
+      const res = await api.post("/Auth/login", {
+        email: userInfo.email,
+        password: userInfo.password,
       });
-      const data = await res.json();
-      if (data.accessToken) {
-        const decoded = jwtDecode(data.accessToken);
-        console.log(decoded);
-        login(data.accessToken);
-      } else {
-        setErrors({ email: true, password: true });
-        setErrorMessages({
-          email: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
-          password: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
-        });
+
+      // Backend may return the token under different keys depending on config
+      const token =
+        res.data?.token || res.data?.accessToken || res.data?.jwt || res.data;
+
+      if (!token || typeof token !== "string") {
+        throw new Error("لم يتم استلام رمز الدخول من الخادم");
       }
+
+      const { ok, role } = login(token);
+      if (!ok) throw new Error("رمز الدخول غير صالح");
+
+      // Send the user straight to their own area based on the role
+      const destination =
+        role?.toLowerCase() === "worker"
+          ? "/worker-profile"
+          : role?.toLowerCase() === "admin"
+          ? "/admin"
+          : role?.toLowerCase() === "client"
+          ? "/client"
+          : "/"; // fallback if the token has no recognizable role claim
+      console.log("role from login():", role, "destination:", destination);
+      navigate(destination, { replace: true });
     } catch (err) {
-      console.log(err);
-      setErrors({ email: false, password: false });
-      setErrorMessages({ email: "", password: "حدث خطأ، يرجى المحاولة مرة أخرى" });
+      setErrors({ email: true, password: true });
+      setErrorMessages({
+        email: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+        password: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+      });
+      setFormError(err.message || "تعذر تسجيل الدخول، حاول مرة أخرى");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-  <>
-    <AuthNavbar/>
-    <div className="mt-14 min-h-screen flex items-center justify-center bg-gray-50 p-3 sm:p-4 font-sans">
-      <div className="bg-white rounded-[30px] sm:rounded-[45px] shadow-sm border border-gray-700 flex w-full max-w-6xl overflow-hidden min-h-[600px] sm:min-h-[700px]">
+    <>
+      <AuthNavbar />
+      <div className="mt-14 min-h-screen flex items-center justify-center bg-gray-50 p-3 sm:p-4 font-sans">
+        <div className="bg-white rounded-[24px] sm:rounded-[45px] shadow-sm border border-gray-200 flex w-full max-w-6xl overflow-hidden min-h-0 sm:min-h-[700px]">
+          <SignupAndLogin />
 
-        {/* IMAGE SIDE — hidden on mobile */}
-        <SignupAndLogin />
+          <div className="w-full md:w-1/2 flex flex-col justify-center px-5 sm:px-8 md:px-16 py-8 sm:py-10" dir="rtl">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 text-center mb-6 sm:mb-10">
+              تسجيل الدخول
+            </h1>
 
-        {/* FORM SIDE */}
-        <div className="w-full md:w-1/2 flex flex-col justify-center px-5 sm:px-8 md:px-16 py-8 sm:py-10" dir="rtl">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 text-center mb-6 sm:mb-10">
-            تسجيل الدخول
-          </h1>
-
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-            {/* EMAIL */}
-            <div className="space-y-1 sm:space-y-2">
-              <label className="text-[13px] font-bold text-gray-500 mr-2 block">
-                البريد الإلكتروني
-              </label>
-              <div className="relative">
-                <EnvelopeIcon className="w-5 h-5 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input
-                  type="email"
-                  name="email"
-                  value={userInfo.email}
-                  onChange={handleChange}
-                  placeholder="example@domain.com"
-                  className={`w-full pr-12 pl-4 py-3 sm:py-4 rounded-2xl border bg-blue-50 text-right transition-all outline-none text-sm sm:text-base
-                  ${errors.email ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-gray-600 focus:border-[#1093ED] focus:ring-1 focus:ring-[#1093ED]"}`}
-                />
+            {successMessage && (
+              <div className="mb-6 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm text-center font-bold">
+                {successMessage}
               </div>
-              {errors.email && errorMessages.email && (
-                <p className="text-red-500 text-xs sm:text-[13px] font-medium mr-2 mt-1 flex items-center gap-1">
-                  <span>⚠</span>
-                  <span>{errorMessages.email}</span>
-                </p>
-              )}
-            </div>
+            )}
 
-            {/* PASSWORD */}
-            <div className="space-y-1 sm:space-y-2">
-              <label className="text-[13px] font-bold text-gray-500 mr-2 block">
-                كلمة المرور
-              </label>
-              <div className="relative">
+            {formError && (
+              <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm text-center font-bold">
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              <div className="space-y-1 sm:space-y-2">
+                <label className="text-[13px] font-bold text-gray-500 mr-2 block">
+                  البريد الإلكتروني
+                </label>
+                <div className="relative">
+                  <EnvelopeIcon className="w-5 h-5 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    value={userInfo.email}
+                    onChange={handleChange}
+                    placeholder="example@domain.com"
+                    className={`w-full pr-12 pl-4 py-3 sm:py-4 rounded-2xl border bg-blue-50 text-right transition-all outline-none text-sm sm:text-base
+                    ${errors.email ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-gray-300 focus:border-[#1093ED] focus:ring-1 focus:ring-[#1093ED]"}`}
+                  />
+                </div>
+                {errors.email && errorMessages.email && (
+                  <p className="text-red-500 text-xs sm:text-[13px] font-medium mr-2 mt-1 flex items-center gap-1">
+                    <span>⚠</span>
+                    <span>{errorMessages.email}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1 sm:space-y-2">
+                <label className="text-[13px] font-bold text-gray-500 mr-2 block">
+                  كلمة المرور
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                  </button>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    autoComplete="current-password"
+                    value={userInfo.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    className={`w-full pr-12 pl-4 py-3 sm:py-4 rounded-2xl border bg-blue-50 text-right transition-all outline-none text-sm sm:text-base
+                    ${errors.password ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-gray-300 focus:border-[#1093ED] focus:ring-1 focus:ring-[#1093ED]"}`}
+                  />
+                </div>
+                {errors.password && errorMessages.password && (
+                  <p className="text-red-500 text-xs sm:text-[13px] font-medium mr-2 mt-1 flex items-center gap-1">
+                    <span>⚠</span>
+                    <span>{errorMessages.password}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-1 sm:pt-2">
                 <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full bg-[#0E8AEE] text-white py-3 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-blue-600 active:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex justify-center items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {showPassword
-                    ? <EyeSlashIcon className="w-5 h-5" />
-                    : <EyeIcon className="w-5 h-5" />
-                  }
+                  {submitting ? (
+                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span>تسجيل الدخول</span>
+                      <span className="text-xl rotate-180">‹</span>
+                    </>
+                  )}
                 </button>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={userInfo.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  className={`w-full pr-12 pl-4 py-3 sm:py-4 rounded-2xl border bg-blue-50 text-right transition-all outline-none text-sm sm:text-base
-                  ${errors.password ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-gray-600 focus:border-[#1093ED] focus:ring-1 focus:ring-[#1093ED]"}`}
-                />
               </div>
-              {errors.password && errorMessages.password && (
-                <p className="text-red-500 text-xs sm:text-[13px] font-medium mr-2 mt-1 flex items-center gap-1">
-                  <span>⚠</span>
-                  <span>{errorMessages.password}</span>
-                </p>
-              )}
+            </form>
+
+            <div className="flex flex-wrap justify-center items-center gap-1 sm:gap-2 mt-4 sm:mt-6 text-xs sm:text-sm">
+              <QuestionMarkCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+              <span className="text-gray-400">هل نسيت كلمة السر؟</span>
+              <a href="#" className="text-[#1093ED] font-bold hover:underline">اضغط هنا</a>
             </div>
 
-            <div className="pt-1 sm:pt-2">
-              <button
-                type="submit"
-                className="w-full bg-[#0E8AEE] text-white py-3 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-blue-600 active:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex justify-center items-center gap-2"
-              >
-                <span>تسجيل الدخول</span>
-                <span className="text-xl rotate-180">‹</span>
-              </button>
+            <div className="mt-6 text-center text-sm">
+              ليس لديك حساب؟{" "}
+              <Link to="/signup" className="text-[#1093ED] font-bold hover:underline">
+                إنشاء حساب جديد
+              </Link>
             </div>
-          </form>
-
-          {/* FORGOT PASSWORD */}
-          <div className="flex flex-wrap justify-center items-center gap-1 sm:gap-2 mt-4 sm:mt-6 text-xs sm:text-sm">
-            <QuestionMarkCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-            <span className="text-gray-400">هل نسيت كلمة السر؟</span>
-            <a href="#" className="text-[#1093ED] font-bold hover:underline">اضغط هنا</a>
-          </div>
-
-          {/* SOCIAL LOGIN SECTION */}
-          <div className="mt-8 sm:mt-12 relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-700"></div>
-            </div>
-            <div className="relative flex justify-center text-[11px] sm:text-[12px]">
-              <span className="px-3 sm:px-4 bg-white text-gray-700 font-medium">او سجل الدخول بـ</span>
-            </div>
-          </div>
-
-          <div className="mt-4 sm:mt-8 grid grid-cols-3 gap-2 sm:gap-4">
-            <button className="flex justify-center items-center py-3 sm:py-4 border border-gray-900 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-all">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-[#1877F2] fill-current" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-            </button>
-            <button className="flex justify-center items-center py-3 sm:py-4 border border-gray-900 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-all">
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 sm:w-6 sm:h-6" alt="Google" />
-            </button>
-            <button className="flex justify-center items-center py-3 sm:py-4 border border-gray-900 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-all">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 fill-current text-black" viewBox="0 0 24 24">
-                <path d="M17.05 20.28c-.98.95-2.05 1.79-3.72 1.79-1.61 0-2.11-1-3.83-1-1.73 0-2.31 1-3.84 1-1.57 0-2.78-1.02-3.79-2.45-2.07-2.92-2.07-7.56 0-10.48 1.03-1.46 2.52-2.38 4.14-2.38 1.28 0 2.25.72 3.12.72.82 0 2.11-.88 3.55-.88 1.5 0 2.8.62 3.65 1.84-3.14 1.85-2.63 6.13.52 7.42-.74 1.81-1.73 3.44-2.8 4.42zM12.04 4.54c-.12-1.95 1.53-3.6 3.43-3.54.12 1.95-1.55 3.6-3.43 3.54z" />
-              </svg>
-            </button>
           </div>
         </div>
-
-        
       </div>
-    </div>
-  </>
+    </>
   );
 };
 

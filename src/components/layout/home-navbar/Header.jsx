@@ -101,9 +101,11 @@ const Header = () => {
           >
             كيف يعمل ؟
           </a>
-          <button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md text-sm">
-            تسجيل الدخول
-          </button>
+          <Link to="/login">
+            <button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md text-sm">
+              تسجيل الدخول
+            </button>
+          </Link>
         </div>
       )}
     </nav>
