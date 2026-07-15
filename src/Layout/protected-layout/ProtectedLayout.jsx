@@ -1,13 +1,26 @@
-import { Outlet, Navigate } from 'react-router-dom'
-import { useAuth } from '../../context/Context'
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../../context/Context";
 
 const ProtectedLayout = ({ allowedRole }) => {
-  const { user } = useAuth()
+  const { logged, role, authLoading } = useAuth();
 
-  if (!user) return <Navigate to="/login"  />
-  if (allowedRole && user.role !== allowedRole) return <Navigate to="/"  />
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#1093ED] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
-  return <Outlet />
-}
+  if (!logged) {
+    return <Navigate to="/login" replace />;
+  }
 
-export default ProtectedLayout
+  if (allowedRole && role && role.toLowerCase() !== allowedRole.toLowerCase()) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <Outlet />;
+};
+
+export default ProtectedLayout;

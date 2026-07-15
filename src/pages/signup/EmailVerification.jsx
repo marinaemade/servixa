@@ -1,9 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { ArrowRightIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { Link } from 'react-router-dom';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
 import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
+import { useSignup } from '../../context/SignupContext';
 
 const EmailVerification = () => {
+  const navigate = useNavigate();
+  const { data } = useSignup();
+
   const [otp, setOtp] = useState(['', '', '', '']);
   const inputRefs = [useRef(), useRef(), useRef(), useRef()];
 
@@ -26,14 +30,29 @@ const EmailVerification = () => {
     }
   };
 
+  // Runs only when the person clicks "confirm", not on every keystroke.
+  // Role values are "provider" / "customer" (set in AccountType.jsx).
+  const handleConfirm = () => {
+    if (data.role === 'customer') {
+      navigate('/LastStep');
+    } else {
+      navigate('/scope-of-work');
+    }
+  };
+
+  // Mask the email for display, e.g. "ahmed***@example.com"
+  const maskedEmail = data.email
+    ? data.email.replace(/^(.{2}).+(@.+)$/, "$1***$2")
+    : "";
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4 font-sans" dir="rtl">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 sm:py-10 px-3 sm:px-4 font-sans" dir="rtl">
       <AuthNavbar/>
       {/* Progress Bar Container */}
-      <div className="w-full max-w-5xl mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-[#1093ED] font-bold text-sm">الخطوة 3 من 4</span>
-          <span className="text-gray-400 text-sm">التحقق من البريد الإلكتروني</span>
+      <div className="mt-14 w-full max-w-5xl mb-6 sm:mb-8">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <span className="text-[#1093ED] font-bold text-xs sm:text-sm">الخطوة 3 من 4</span>
+          <span className="text-gray-400 text-xs sm:text-sm">التحقق من البريد الإلكتروني</span>
         </div>
         <div className="flex gap-2 h-1.5">
           <div className="flex-1 bg-[#1093ED] rounded-full"></div>
@@ -44,19 +63,19 @@ const EmailVerification = () => {
       </div>
 
       {/* Main Container */}
-      <div className="bg-white rounded-[45px] shadow-sm border border-gray-100 w-full max-w-5xl p-8 md:p-20 relative flex flex-col items-center">
+      <div className="bg-white rounded-[24px] sm:rounded-[45px] shadow-sm border border-gray-200 w-full max-w-5xl p-5 sm:p-8 md:p-20 relative flex flex-col items-center">
 
         {/* Header Section */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">
+        <div className="text-center mb-8 sm:mb-10">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4 sm:mb-6">
             تحقق من <span className="text-[#1093ED]">بريدك الالكتروني</span>
           </h1>
-          <p className="text-gray-400 text-base mb-2">لقد أرسلنا رمز التحقق المكون من 4 أرقام إلى</p>
-          <p className="text-[#1093ED] font-medium" dir="ltr">ahmed***@example.com</p>
+          <p className="text-gray-400 text-sm sm:text-base mb-2">لقد أرسلنا رمز التحقق المكون من 4 أرقام إلى</p>
+          <p className="text-[#1093ED] font-medium" dir="ltr">{maskedEmail || "your-email@example.com"}</p>
         </div>
 
         {/* OTP Input Group */}
-        <div className="flex gap-3 md:gap-5 mb-8" dir="ltr">
+        <div className="flex gap-2 sm:gap-3 md:gap-5 mb-8" dir="ltr">
           {otp.map((digit, index) => (
             <input
               key={index}
@@ -66,28 +85,30 @@ const EmailVerification = () => {
               value={digit}
               onChange={(e) => handleChange(e.target.value, index)}
               onKeyDown={(e) => handleKeyDown(e, index)}
-              className={`w-14 h-16 md:w-20 md:h-24 text-2xl md:text-3xl font-bold text-center rounded-2xl border-2 transition-all outline-none
-                ${digit ? 'border-[#1093ED] bg-blue-50 text-gray-800' : 'border-gray-100 bg-gray-50/30 text-gray-400'}`}
+              className={`w-12 h-14 sm:w-14 sm:h-16 md:w-20 md:h-24 text-xl sm:text-2xl md:text-3xl font-bold text-center rounded-2xl border-2 transition-all outline-none
+                ${digit ? 'border-[#1093ED] bg-blue-50 text-gray-800' : 'border-gray-200 bg-gray-50/30 text-gray-400'}`}
             />
           ))}
         </div>
 
         {/* Resend Link */}
-        <div className="text-sm mb-12">
+        <div className="text-sm mb-10 sm:mb-12">
           <span className="text-gray-400">لم تستلم الرمز؟ </span>
-          <button className="text-[#1093ED] font-bold hover:underline">إعادة الإرسال</button>
+          <button type="button" className="text-[#1093ED] font-bold hover:underline">إعادة الإرسال</button>
         </div>
 
         {/* Action Buttons */}
         <div className="w-full max-w-md space-y-4">
-          <Link to={"/ScopeOfWork"}>
-            <button className="w-full bg-[#1093ED] text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-100 hover:bg-blue-600 transition-all">
-              <span>تأكيد وإتمام التسجيل</span>
-              <ArrowLeftIcon className="w-5 h-5" />
-            </button>
-          </Link>
-          
-          <button className="w-full py-4 rounded-2xl font-bold text-lg border border-[#1093ED] text-[#1093ED] bg-blue-50/50 hover:bg-blue-50 transition-all">
+          <button
+            type="button"
+            onClick={handleConfirm}
+            className="w-full bg-[#1093ED] text-white py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-100 hover:bg-blue-600 transition-all"
+          >
+            <span>تأكيد وإتمام التسجيل</span>
+            <ArrowLeftIcon className="w-5 h-5" />
+          </button>
+
+          <button type="button" className="w-full py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg border border-[#1093ED] text-[#1093ED] bg-blue-50/50 hover:bg-blue-50 transition-all">
             تغيير البريد الإلكتروني
           </button>
         </div>

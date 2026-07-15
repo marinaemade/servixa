@@ -3,16 +3,20 @@ import { useNavigate } from "react-router-dom";
 import AuthNavbar from './../../components/layout/auth-navbar/AuthNavbar';
 import {
   ArrowLeftIcon,
-  ChevronDownIcon,
   PlusCircleIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
+import { useSignup } from '../../context/SignupContext';
 
 const emptyRegion = () => ({ governorate: "", city: "", range: "" });
 
 const ScopeOfWork = () => {
   const navigate = useNavigate();
-  const [regions, setRegions] = useState([emptyRegion()]);
+  const { data, updateSignup } = useSignup();
+  const [regions, setRegions] = useState(
+    data.regions?.length ? data.regions : [emptyRegion()]
+  );
+  const [error, setError] = useState("");
 
   const handleChange = (index, field, value) => {
     setRegions((prev) =>
@@ -25,17 +29,26 @@ const ScopeOfWork = () => {
   const removeRegion = (index) =>
     setRegions((prev) => prev.filter((_, i) => i !== index));
 
+  const handleContinue = () => {
+    setError("");
+    if (!regions[0]?.governorate?.trim() || !regions[0]?.city?.trim()) {
+      return setError("الرجاء إدخال المحافظة والمدينة على الأقل لمنطقة واحدة");
+    }
+    updateSignup({ regions });
+    navigate("/LastStep");
+  };
+
   const inputClass =
-    "w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:border-[#1093ED] focus:ring-1 focus:ring-[#1093ED] text-gray-700 placeholder-gray-400 transition-all text-sm";
+    "w-full px-4 sm:px-6 py-3.5 sm:py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-[#1093ED] focus:ring-1 focus:ring-[#1093ED] text-gray-700 placeholder-gray-400 transition-all text-sm";
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4 font-sans" dir="rtl">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 sm:py-10 px-3 sm:px-4 font-sans" dir="rtl">
       <AuthNavbar/>
       {/* Progress Bar — Step 4 of 4 */}
-      <div className=" mt-14 w-full max-w-5xl mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-[#1093ED] font-bold text-sm">الخطوة 4 من 4</span>
-          <span className="text-gray-400 text-sm">تحديد نطاق العمل</span>
+      <div className="mt-14 w-full max-w-5xl mb-6 sm:mb-8">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <span className="text-[#1093ED] font-bold text-xs sm:text-sm">الخطوة 4 من 4</span>
+          <span className="text-gray-400 text-xs sm:text-sm">تحديد نطاق العمل</span>
         </div>
         <div className="flex gap-2 h-1.5">
           <div className="flex-1 bg-[#1093ED] rounded-full"></div>
@@ -46,22 +59,27 @@ const ScopeOfWork = () => {
       </div>
 
       {/* Main Container */}
-      <div className="bg-white rounded-[45px] shadow-sm border border-gray-100 w-full max-w-5xl p-8 md:p-14 relative">
+      <div className="bg-white rounded-[24px] sm:rounded-[45px] shadow-sm border border-gray-200 w-full max-w-5xl p-5 sm:p-8 md:p-14 relative">
 
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
             نطاق <span className="text-[#1093ED]">العمل</span>
           </h1>
-          <p className="text-gray-700 text-lg font-bold">أين يمكنك تقديم خدماتك؟</p>
+          <p className="text-gray-700 text-sm sm:text-lg font-bold">أين يمكنك تقديم خدماتك أو استقبال المحترفين؟</p>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl font-bold text-sm text-center">
+            {error}
+          </div>
+        )}
 
         {/* Regions */}
         <div className="space-y-6 mb-6">
           {regions.map((region, index) => (
             <div key={index} className="relative">
 
-              {/* Remove button — only show for extra regions */}
               {index > 0 && (
                 <div className="flex justify-end mb-2">
                   <button
@@ -74,7 +92,7 @@ const ScopeOfWork = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
 
                 {/* Governorate */}
                 <div className="space-y-2">
@@ -108,13 +126,12 @@ const ScopeOfWork = () => {
                     placeholder="مثال: 10 كم"
                   />
                   <p className="text-[10px] text-gray-400 mr-2 leading-relaxed">
-                    كم تبعد المسافة القصوى التي يمكنك السفر إليها لتقديم الخدمة؟
+                    كم تبعد المسافة القصوى التي يمكنك السفر إليها لتقديم أو استقبال الخدمة؟
                   </p>
                 </div>
 
               </div>
 
-              {/* Divider between regions */}
               {index < regions.length - 1 && (
                 <div className="mt-6 border-t border-dashed border-gray-200"></div>
               )}
@@ -123,7 +140,7 @@ const ScopeOfWork = () => {
         </div>
 
         {/* Add Region */}
-        <div className="flex justify-start mb-16">
+        <div className="flex justify-start mb-12 sm:mb-16">
           <button
             onClick={addRegion}
             className="flex items-center gap-2 text-[#1093ED] font-bold hover:opacity-80 transition-opacity"
@@ -136,8 +153,8 @@ const ScopeOfWork = () => {
         {/* Submit */}
         <div className="flex justify-center">
           <button
-            onClick={() => navigate("/LastStep")}
-            className="bg-[#1093ED] text-white px-16 py-4 rounded-2xl font-bold text-lg flex items-center gap-3 shadow-lg shadow-blue-100 hover:bg-blue-600 transition-all"
+            onClick={handleContinue}
+            className="w-full sm:w-auto bg-[#1093ED] text-white px-10 sm:px-16 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-100 hover:bg-blue-600 transition-all"
           >
             <span>حفظ ومتابعة</span>
             <ArrowLeftIcon className="w-5 h-5" />

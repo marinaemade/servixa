@@ -10,37 +10,39 @@ import {
   PhotoIcon,
   ArrowRightIcon,
 } from '@heroicons/react/24/outline';
+import { useSignup } from '../../context/SignupContext';
+import api from '../../api/api';
 
 const LastStep = () => {
   const navigate = useNavigate();
+  const { data, updateSignup, resetSignup } = useSignup();
 
-  // Bio
+  // Bio / skills / portfolio are kept as UI-only for now — there's no backend
+  // only accepts FirstName/LastName/Email/PhoneNumber/Password/Latitude/
+  // Longitude/NationalIdFront/NationalIdBack/ProfilePicture). They'll be easy
+  // to wire up once a "complete worker profile" endpoint exists.
   const [bio, setBio] = useState('');
-
-  // Profile photo
-  const [profilePhoto, setProfilePhoto] = useState(null);
-  const profileInputRef = useRef();
-
-  // Error State
-  const [error, setError] = useState('');
-
-  // Skills
   const [skills, setSkills] = useState(['تركيب خلاطات', 'تسليك مواسير']);
   const [skillInput, setSkillInput] = useState('');
-
-  // Portfolio images
   const [portfolio, setPortfolio] = useState([
     'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80',
     'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=300&q=80',
   ]);
   const portfolioInputRef = useRef();
 
-  // Handlers
+  const [profilePhotoFile, setProfilePhotoFile] = useState(data.profilePicture);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
+  const profileInputRef = useRef();
+
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
   const handleProfilePhoto = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setProfilePhoto(URL.createObjectURL(file));
-      setError(''); 
+      setProfilePhotoFile(file);
+      setProfilePhotoPreview(URL.createObjectURL(file));
+      setError('');
     }
   };
 
@@ -68,51 +70,121 @@ const LastStep = () => {
   const removePortfolio = (index) =>
     setPortfolio(portfolio.filter((_, i) => i !== index));
 
-  const handleSave = () => {
+  // Build a single-line address out of the regions collected in ScopeOfWork,
+  // used as the "defaultAddress" field for client registration.
+  const buildAddressFromRegions = () => {
+    const first = data.regions?.[0];
+    if (!first) return '';
+    return [first.governorate, first.city].filter(Boolean).join('، ');
+  };
+
+  const registerAsWorker = async () => {
+    if (!data.nationalIdFront || !data.nationalIdBack) {
+      setError('الرجاء إكمال خطوة توثيق الهوية أولاً');
+      navigate('/verification');
+      return false;
+    }
+
+    const formData = new FormData();
+    formData.append('FirstName', data.firstName);
+    formData.append('LastName', data.lastName);
+    formData.append('Email', data.email);
+    formData.append('PhoneNumber', data.phone);
+    formData.append('Password', data.password);
+    // No geolocation collected — backend defaults these to 0 when omitted.
+    formData.append('Latitude', 0);
+    formData.append('Longitude', 0);
+    formData.append('NationalIdFront', data.nationalIdFront);
+    formData.append('NationalIdBack', data.nationalIdBack);
+    formData.append('ProfilePicture', profilePhotoFile);
+
+    await api.post('/Auth/register-worker', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return true;
+  };
+
+  const registerAsClient = async () => {
+    const payload = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      password: data.password,
+      phoneNumber: data.phone,
+      defaultAddress: buildAddressFromRegions(),
+      // No geolocation collected — backend defaults these to 0 when omitted.
+      latitude: 0,
+      longitude: 0,
+    };
+
+    await api.post('/Auth/register-client', payload);
+    return true;
+  };
+
+  const handleSave = async () => {
     setError('');
 
-    if (!profilePhoto) {
+    if (!profilePhotoFile) {
       setError('الرجاء رفع صورة الحساب الشخصية أولاً للاستمرار');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    console.log("Saving profile data:", { bio, profilePhoto, skills, portfolio });
+    if (!data.role) {
+      setError('لم يتم تحديد نوع الحساب، الرجاء البدء من جديد');
+      navigate('/account-type');
+      return;
+    }
 
-    // 1. قراءة المفتاح الصحيح الموحد 'userRole'
-    const userRole = localStorage.getItem('userRole'); 
+    setSubmitting(true);
+    try {
+      if (data.role === 'provider') {
+        const ok = await registerAsWorker();
+        if (!ok) return; // navigated away already (missing ID docs)
 
-    // 2. التوجيه بناءً على القيم الفعلية المخزنة ('provider' أو 'customer')
-    if (userRole === 'provider') {
-      navigate('/worker-profile');
-    } else if (userRole === 'customer') {
-      navigate('/client'); // أو '/client-profile' حسب مسار الصفحة لديك
-    } else {
-      console.warn("Account type (userRole) not found in localStorage, navigating to dashboard");
-      navigate('/dashboard'); 
+        resetSignup();
+        navigate('/login', {
+          state: {
+            message:
+              'تم إرسال طلب انضمامك بنجاح، سيراجع فريقنا بياناتك وستصلك رسالة عند الموافقة',
+          },
+        });
+      } else {
+        await registerAsClient();
+
+        resetSignup();
+        navigate('/login', {
+          state: { message: 'تم إنشاء الحساب بنجاح، يمكنك تسجيل الدخول الآن' },
+        });
+      }
+    } catch (err) {
+      console.error('registration failed:', err?.response?.status, err?.response?.data);
+      setError(err.message || 'حدث خطأ أثناء إرسال طلبك، حاول مرة أخرى');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans pb-24" dir="rtl">
+    <div className="min-h-screen bg-gray-50 font-sans pb-28 sm:pb-24" dir="rtl">
       <AuthNavbar/>
       {/* ── Header ── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-10 pb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 text-right mb-1">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-24 sm:pt-24 pb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-800 text-right mb-1">
           تجهيز ملفك الاحترافي
         </h1>
-        <p className="text-gray-400 text-sm text-right">
-          أنت على بعد خطوة واحدة من استقبال أول عميل لك. دعنا نبني واجهة محترك الرقمي.
+        <p className="text-gray-400 text-xs sm:text-sm text-right">
+          أنت على بعد خطوة واحدة من استقبال أول عميل لك. دعنا نبني واجهتك الرقمية.
         </p>
       </div>
 
       {/* ── Main Grid ── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
 
         {/* ── LEFT COLUMN (col-span-2) ── */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-5 order-2 lg:order-1">
 
-          {/* رسالة الخطأ عند عدم رفع الصورة */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-3xl font-bold text-sm text-center">
               {error}
@@ -120,7 +192,7 @@ const LastStep = () => {
           )}
 
           {/* بنبذة عني */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6">
             <h2 className="text-base font-extrabold text-gray-800 mb-1 text-right">نبذة عني</h2>
             <p className="text-xs text-gray-400 mb-4 text-right">ماذا تريد العملاء أن يعرفوه؟</p>
             <textarea
@@ -133,7 +205,7 @@ const LastStep = () => {
           </div>
 
           {/* المهارات */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={addSkill}
@@ -145,7 +217,6 @@ const LastStep = () => {
               <h2 className="text-base font-extrabold text-gray-800">المهارات</h2>
             </div>
 
-            {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-4 justify-end">
               {skills.map((skill) => (
                 <span
@@ -163,7 +234,6 @@ const LastStep = () => {
               ))}
             </div>
 
-            {/* Input */}
             <div className="flex gap-2 flex-row-reverse">
               <input
                 value={skillInput}
@@ -174,7 +244,7 @@ const LastStep = () => {
               />
               <button
                 onClick={addSkill}
-                className="bg-[#1093ED] text-white px-4 py-2.5 rounded-2xl text-sm font-bold hover:bg-blue-600 transition-colors"
+                className="bg-[#1093ED] text-white px-4 py-2.5 rounded-2xl text-sm font-bold hover:bg-blue-600 transition-colors shrink-0"
               >
                 إضافة
               </button>
@@ -182,11 +252,11 @@ const LastStep = () => {
           </div>
 
           {/* معرض الأعمال */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-1">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6">
+            <div className="flex items-center justify-between mb-1 gap-3">
               <button
                 onClick={() => portfolioInputRef.current.click()}
-                className="flex items-center gap-1.5 text-xs font-bold text-[#1093ED] border border-[#1093ED] rounded-full px-3 py-1.5 hover:bg-blue-50 transition-colors"
+                className="flex items-center gap-1.5 text-xs font-bold text-[#1093ED] border border-[#1093ED] rounded-full px-3 py-1.5 hover:bg-blue-50 transition-colors shrink-0"
               >
                 <PlusIcon className="w-3.5 h-3.5" />
                 <span>إضافة صورة</span>
@@ -206,7 +276,6 @@ const LastStep = () => {
             />
 
             <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-3">
-              {/* Add new placeholder */}
               <button
                 onClick={() => portfolioInputRef.current.click()}
                 className="aspect-square rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 hover:border-[#1093ED] hover:bg-blue-50 transition-all group"
@@ -232,16 +301,16 @@ const LastStep = () => {
         </div>
 
         {/* ── RIGHT COLUMN ── */}
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5 order-1 lg:order-2">
 
           {/* صورة الحساب */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col items-center">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6 flex flex-col items-center">
             <div className="relative mb-4">
-              <div className="w-24 h-24 rounded-full bg-blue-50 border-2 border-blue-100 flex items-center justify-center overflow-hidden">
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="profile" className="w-full h-full object-cover" />
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-blue-50 border-2 border-blue-100 flex items-center justify-center overflow-hidden">
+                {profilePhotoPreview ? (
+                  <img src={profilePhotoPreview} alt="profile" className="w-full h-full object-cover" />
                 ) : (
-                  <svg className="w-12 h-12 text-[#1093ED]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-10 h-10 sm:w-12 sm:h-12 text-[#1093ED]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                   </svg>
                 )}
@@ -265,22 +334,22 @@ const LastStep = () => {
           </div>
 
           {/* نطاق العمل */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6">
             <div className="flex items-center justify-end gap-2 mb-3">
               <h2 className="text-sm font-extrabold text-gray-800">نطاق العمل</h2>
               <MapPinIcon className="w-4 h-4 text-[#1093ED]" />
             </div>
-            <p className="text-xs text-gray-400 text-right mb-3">مثال: الرياض، حي الأرجس</p>
+            <p className="text-xs text-gray-400 text-right mb-3">
+              {buildAddressFromRegions() || "مثال: الرياض، حي الأرجس"}
+            </p>
 
-            {/* Map placeholder */}
-            <div className="w-full h-36 rounded-2xl overflow-hidden bg-gray-100 relative">
+            <div className="w-full h-32 sm:h-36 rounded-2xl overflow-hidden bg-gray-100 relative">
               <iframe
                 title="map"
                 src="https://www.openstreetmap.org/export/embed.html?bbox=46.5,24.6,46.8,24.8&layer=mapnik"
                 className="w-full h-full border-0"
                 loading="lazy"
               />
-              {/* Blue pin overlay */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-[#1093ED] rounded-full w-4 h-4 shadow-lg ring-4 ring-blue-200" />
               </div>
@@ -292,18 +361,23 @@ const LastStep = () => {
 
       {/* ── Bottom Save Bar ── */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
 
-          {/* Right: save button */}
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 bg-[#1093ED] text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-blue-600 active:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
+            disabled={submitting}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#1093ED] text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-blue-600 active:bg-blue-700 transition-colors shadow-lg shadow-blue-100 disabled:opacity-60"
           >
-            <ArrowRightIcon className="w-4 h-4" />
-            <span>حفظ واستمرار</span>
+            {submitting ? (
+              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <ArrowRightIcon className="w-4 h-4" />
+                <span>حفظ واستمرار</span>
+              </>
+            )}
           </button>
 
-          {/* Left: status */}
           <div className="flex items-center gap-2 text-right">
             <div>
               <p className="text-xs font-extrabold text-gray-700">ملفك جاهز للمراجعة</p>
