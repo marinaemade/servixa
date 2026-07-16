@@ -1,63 +1,95 @@
 // src/api/ClientApi.js
 
-const BASE_URL = `${import.meta.env.VITE_API_URL}/Client/profile`;
+const BASE_URL = "https://servixa.runasp.net/api"; // تم التوجيه مباشرة لعنوان السيرفر الفعلي
 
 const getHeaders = () => {
-  const token = localStorage.getItem("tc"); // استخدام توكن العميل الصحيح
+  const token = localStorage.getItem("tc") || localStorage.getItem("token");
   return {
     ...(token ? { "Authorization": `Bearer ${token}` } : {}),
   };
 };
 
-// 1. جلب بيانات ملف العميل الشخصي
+// جلب بيانات ملف العميل الشخصي
 export const fetchClientProfile = async () => {
   try {
-    const response = await fetch(BASE_URL, {
+    const response = await fetch(`${BASE_URL}/Client/profile`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         ...getHeaders(),
       },
     });
+
     if (!response.ok) {
       throw new Error(`Server returned status ${response.status}`);
     }
-    return await response.json();
-    console.log("=== البيانات الراجعة من السيرفر ===", data);
+
+    const result = await response.json();
+    console.log("=== البيانات الراجعة من السيرفر عند الجلب ===", result);
+    
+    // فك التغليف: السيرفر يرجع البيانات داخل كائن يحتوي على حقل data
+    if (result && result.isSuccess && result.data) {
+      return result.data; 
+    }
+    
+    return result;
   } catch (error) {
     console.warn("⚠️ فشل جلب البيانات، تم استخدام بيانات محاكاة:", error);
     return {
-      fullName: "أحمد منصور",
-      location: "القاهرة، مصر",
-      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200",
+      id: 12,
+      firstName: "ماريا",
+      lastName: "عماد",
+      email: "marina1@gmail.com",
+      phoneNumber: "01078313265",
+      balance: 0,
+      suspendedBalance: 0,
     };
   }
 };
 
-// 2. تحديث بيانات العميل الشخصية (مع دعم رفع الصورة الشخصية)
-export const updateClientProfile = async (profileData) => {
-  try {
-    const formData = new FormData();
-    formData.append("fullName", profileData.name);
-    formData.append("location", profileData.location);
-    
-    // إذا قام المستخدم باختيار ملف صورة جديد، نقوم بإرفاقه بالطلب
-    if (profileData.imageFile) {
-      formData.append("image", profileData.imageFile); 
-    }
+// تحديث بيانات الملف الشخصي
+// src/api/ClientApi.js
 
-    const response = await fetch(BASE_URL, {
+export const updateClientProfile = async (editData) => {
+  try {
+    const token = localStorage.getItem("tc") || localStorage.getItem("token");
+
+    // تقسيم الاسم الأول والأخير
+    const nameParts = (editData.fullName || "").trim().split(" ");
+    const firstName = nameParts[0] || editData.firstName || "";
+    const lastName = nameParts.slice(1).join(" ") || editData.lastName || "";
+
+    // بناء كائن FormData بدلاً من JSON عادي
+    const formData = new FormData();
+    formData.append("id", editData.id || 0);
+    formData.append("firstName", firstName);
+    formData.append("lastName", lastName);
+    formData.append("email", editData.email || "");
+    formData.append("phoneNumber", editData.phoneNumber || "");
+
+    console.log("=== جاري إرسال البيانات كـ FormData ===");
+
+    const response = await fetch(`${BASE_URL}/Client/profile`, {
       method: "PUT",
-      headers: getHeaders(), // نترك المتصفح يحدد الـ Content-Type تلقائياً للـ FormData
+      headers: {
+        // تنبيه هام جداً: عند إرسال FormData لا نضع Content-Type يدوياً!
+        // المتصفح سيقوم بوضع Content-Type: multipart/form-data مع تذييل الـ boundary تلقائياً.
+        "Authorization": `Bearer ${token}`
+      },
       body: formData,
     });
 
-    if (!response.ok) {
-      throw new Error(`Server status ${response.status}`);
+    console.log("=== حالة استجابة التعديل (FormData) ===", response.status);
+
+    if (response.ok) {
+      return true;
+    } else {
+      const errorText = await response.text();
+      console.error(`فشل التعديل بكود ${response.status}:`, errorText);
+      return false;
     }
-    return true;
   } catch (error) {
-    console.warn("⚠️ فشل تحديث البيانات على السيرفر، تم محاكاة النجاح:", error);
-    return true;
+    console.error("⚠️ فشل تحديث البيانات:", error);
+    return false;
   }
 };

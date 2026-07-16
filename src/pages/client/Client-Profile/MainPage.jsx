@@ -18,6 +18,9 @@ const MainPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // الاحتفاظ بالبيانات الأصلية المرجعة بالكامل لمنع فقدان الـ email أو الـ id أثناء الإرسال
+  const [rawProfileData, setRawProfileData] = useState(null);
+
   // إعدادات الحالات لتحديث الملف الشخصي وتفعيل وضع التعديل
   const [profile, setProfile] = useState({
     name: "",
@@ -33,11 +36,19 @@ const MainPage = () => {
     const loadData = async () => {
       setLoading(true);
       const data = await fetchClientProfile();
+      console.log("=== البيانات المستلمة في MainPage ===", data);
+      
       if (data) {
+        setRawProfileData(data); // حفظ كائن البيانات بالكامل لاستخدامه عند الحفظ
+        
+        // دمج الاسم الأول والاسم الأخير
+        const combinedName = data.fullName || 
+          `${data.firstName || ""} ${data.lastName || ""}`.trim();
+
         setProfile({
-          name: data.fullName || "أحمد منصور",
-          location: data.location || "العنوان",
-          image: data.image || "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200",
+          name: combinedName || "أحمد منصور",
+          location: data.location || "القاهرة، مصر",
+          image: data.image || "https://www.bing.com/images/search?view=detailV2&ccid=bk0Zdd0t&id=5BDA293E890452077336A29C4460B47FC6628A25&thid=OIP.bk0Zdd0tjIZBGmjNFoPGxgHaHa&mediaurl=https%3A%2F%2Fstatic.vecteezy.com%2Fsystem%2Fresources%2Fpreviews%2F023%2F402%2F601%2Fnon_2x%2Fman-avatar-free-vector.jpg&cdnurl=https%3A%2F%2Fth.bing.com%2Fth%2Fid%2FR.6e4d1975dd2d8c86411a68cd1683c6c6%3Frik%3DJYpixn%252b0YEScog%26pid%3DImgRaw%26r%3D0&exph=980&expw=980&q=avatar+images+for+profile&form=IRPRST&ck=86974D73F28E0E16FC4B39B643269E39&selectedindex=6&itb=1&cw=1375&ch=659&ajaxhist=0&ajaxserp=0&pivotparams=insightsToken%3Dccid_AbGafkaz*cp_57EC51B9E09C3A8EFFFBB311E6C502FA*mid_9EB9C1484521F75C7A5964826DCB03D5E81D28CC*thid_OIP.AbGafkazjc!_S1pZPh0B9cQHaIm&vt=0&sim=11&iss=VSI&ajaxhist=0&ajaxserp=0",
           imageFile: null
         });
       }
@@ -60,9 +71,36 @@ const MainPage = () => {
   // 2. إرسال البيانات المحدثة للسيرفر (PUT)
   const handleSave = async () => {
     setSaving(true);
-    const success = await updateClientProfile(profile);
+
+    // تقسيم الاسم المدخل إلى اسم أول واسم أخير
+    const nameParts = profile.name.trim().split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    // تحضير كائن البيانات المدمج لإرساله عبر الـ Api المطور بـ FormData
+    const updatedData = {
+      id: rawProfileData?.id || 12,
+      firstName: firstName,
+      lastName: lastName,
+      fullName: profile.name,
+      location: profile.location,
+      email: rawProfileData?.email || "",
+      phoneNumber: rawProfileData?.phoneNumber || "",
+      imageFile: profile.imageFile // سيتم معالجته وارفاقه داخل الـ FormData في ClientApi
+    };
+
+    const success = await updateClientProfile(updatedData);
     if (success) {
       setIsEditing(false);
+      // تحديث البيانات الخام لتطابق التعديل الجديد
+      setRawProfileData(prev => ({
+        ...prev,
+        firstName: firstName,
+        lastName: lastName,
+        location: profile.location
+      }));
+    } else {
+      alert("⚠️ فشل حفظ التعديلات، يرجى التحقق من المدخلات ومراجعة كونسول المتصفح.");
     }
     setSaving(false);
   };

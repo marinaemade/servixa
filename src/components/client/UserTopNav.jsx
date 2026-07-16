@@ -70,14 +70,10 @@ const UserTopNav = ({ open, setOpen }) => {
               <p className="text-[11px] text-gray-400">
                 صباح الخير
               </p>
-
-              <h3 className="font-bold text-[16px] text-gray-900">
-                أحمد حسن
-              </h3>
             </div>
 
             <img
-              src="https://i.pravatar.cc/100?img=12"
+              src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=User"
               alt="User"
               className="w-11 h-11 rounded-full object-cover"
             />

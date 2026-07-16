@@ -5,24 +5,23 @@ import {
   FiBriefcase, 
   FiCheckCircle, 
   FiLock, 
-  FiMapPin, 
-  FiCalendar, 
-  FiChevronLeft, 
-  FiChevronRight,
   FiUser,
   FiCreditCard,
-  FiDollarSign,
   FiEdit3,
   FiArrowUpRight,
-  FiAlertCircle
+  FiAlertCircle,
+  FiTrash2,
+  FiChevronLeft,
+  FiChevronRight,
+  FiDollarSign
 } from "react-icons/fi";
 import { fetchClientProfile, updateClientProfile } from "../../../api/ClientApi";
-import { getMyBookings, cancelBooking } from "../../../api/clientService";
+import { fetchMyTasks, deleteTask } from "../../../api/TaskApi"; 
 
-// ── helpers ────────────────────────────────────────────────────────────
 const statusMap = {
   Pending: { label: "قيد الانتظار", color: "bg-amber-100 text-amber-600" },
   Accepted: { label: "مقبول", color: "bg-blue-50 text-blue-500" },
+  "In Progress": { label: "قيد التنفيذ", color: "bg-blue-50 text-blue-500" },
   InProgress: { label: "قيد التنفيذ", color: "bg-blue-50 text-blue-500" },
   Completed: { label: "مكتمل", color: "bg-green-50 text-green-600" },
   Cancelled: { label: "ملغي", color: "bg-red-50 text-red-500" },
@@ -33,43 +32,56 @@ const PAGE_SIZE = 5;
 const ClientProfile = () => {
   const navigate = useNavigate();
   
-  // State الملف الشخصي والحجوزات
+  // الاحتفاظ بكافة بيانات الملف الشخصي الراجعة من السيرفر
   const [profile, setProfile] = useState({
+    id: null,
+    firstName: "",
+    lastName: "",
     fullName: "",
+    email: "",
     phoneNumber: "",
     balance: 0,
     suspendedBalance: 0,
   });
-  const [bookings, setBookings] = useState([]);
   
-  // State التحميل والأخطاء والنوافذ المنبثقة
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ fullName: "", phoneNumber: "" });
+  const [editForm, setEditForm] = useState({ id: null, fullName: "", phoneNumber: "", email: "" });
   const [page, setPage] = useState(1);
-  const [cancellingId, setCancellingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
-  // 1. جلب البيانات من السيرفر عند تحميل المكون
+  // جلب البيانات عند تحميل الصفحة لأول مرة
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [profileData, bookingsRes] = await Promise.all([
+        const [profileData, tasksData] = await Promise.all([
           fetchClientProfile(),
-          getMyBookings(),
+          fetchMyTasks().catch(() => []), // منع تعطل الصفحة كاملة في حال فشل جلب الطلبات
         ]);
 
         if (profileData) {
-          setProfile(profileData);
+          // دمج الاسم الأول والأخير لعرضه في خانة الاسم الكامل بالواجهة
+          const combinedName = profileData.fullName || 
+            `${profileData.firstName || ""} ${profileData.lastName || ""}`.trim();
+
+          const mappedProfile = {
+            ...profileData,
+            fullName: combinedName || "اسم المستخدم"
+          };
+
+          setProfile(mappedProfile);
           setEditForm({ 
-            fullName: profileData.fullName || "", 
-            phoneNumber: profileData.phoneNumber || "" 
+            id: profileData.id,
+            fullName: combinedName, 
+            phoneNumber: profileData.phoneNumber || "",
+            email: profileData.email || ""
           });
         }
 
-        const rawBookings = bookingsRes.data?.data ?? bookingsRes.data ?? [];
-        setBookings(Array.isArray(rawBookings) ? rawBookings : []);
+        setTasks(Array.isArray(tasksData) ? tasksData : []);
       } catch (err) {
         setError(err.message || "فشل تحميل البيانات من الخادم");
       } finally {
@@ -79,9 +91,10 @@ const ClientProfile = () => {
     fetchData();
   }, []);
 
-  // 2. معالجة تعديل البيانات وإرسالها للسيرفر (PUT)
+  // تعديل البيانات الشخصية
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    // إرسال البيانات مضافاً إليها الـ id والـ email لمنع مشاكل الـ validation بالسيرفر
     const success = await updateClientProfile(editForm);
     if (success) {
       setProfile((prev) => ({
@@ -90,37 +103,34 @@ const ClientProfile = () => {
         phoneNumber: editForm.phoneNumber,
       }));
       setIsEditModalOpen(false);
+    } else {
+      alert("⚠️ حدث خطأ أثناء تعديل البيانات الشخصية، يرجى مراجعة الكونسول.");
     }
   };
 
-  // 3. معالجة إلغاء الحجز
-  const handleCancel = async (bookingId) => {
-    if (!window.confirm("هل تريد إلغاء هذا الحجز؟")) return;
+  // حذف الطلب
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm("هل أنت متأكد من رغبتك في حذف/إلغاء هذا الطلب؟")) return;
     try {
-      setCancellingId(bookingId);
-      await cancelBooking(bookingId);
-      setBookings((prev) =>
-        prev.map((b) =>
-          b.id === bookingId ? { ...b, status: "Cancelled" } : b
-        )
-      );
+      setDeletingId(taskId);
+      const success = await deleteTask(taskId);
+      if (success) {
+        setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      }
     } catch (err) {
-      alert(err.message || "فشل إلغاء الحجز");
+      alert(err.message || "فشل حذف الطلب");
     } finally {
-      setCancellingId(null);
+      setDeletingId(null);
     }
   };
 
-  // تصفية الحجوزات النشطة (ليست مكتملة وليست ملغية)
-  const activeBookings = bookings.filter(
-    (b) => b.status !== "Completed" && b.status !== "Cancelled"
+  const activeTasks = tasks.filter(
+    (t) => t.status !== "Completed" && t.status !== "Cancelled"
   );
 
-  // تقسيم سجل الطلبات لصفحات
-  const totalPages = Math.max(1, Math.ceil(bookings.length / PAGE_SIZE));
-  const pagedHistory = bookings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(tasks.length / PAGE_SIZE));
+  const pagedHistory = tasks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // كروت الإحصائيات مدمجة من كلا الطرفين وحاصلة على الحماية اللازمة
   const stats = [
     { 
       id: 1, 
@@ -133,7 +143,7 @@ const ClientProfile = () => {
     { 
       id: 2, 
       title: "الرصيد المعلق", 
-      value: (profile.suspendedBalance ?? profile.pendingBalance ?? 0).toLocaleString("ar-EG"), 
+      value: (profile.suspendedBalance ?? 0).toLocaleString("ar-EG"), 
       unit: "ج.م", 
       icon: <FiLock className="w-6 h-6 text-red-500" />, 
       bgIcon: "bg-red-50" 
@@ -141,7 +151,7 @@ const ClientProfile = () => {
     { 
       id: 3, 
       title: "الطلبات النشطة", 
-      value: activeBookings.length, 
+      value: activeTasks.length, 
       unit: "", 
       icon: <FiBriefcase className="w-6 h-6 text-green-500" />, 
       bgIcon: "bg-green-50" 
@@ -149,7 +159,7 @@ const ClientProfile = () => {
     { 
       id: 4, 
       title: "إجمالي الطلبات", 
-      value: bookings.length, 
+      value: tasks.length, 
       unit: "", 
       icon: <FiClock className="w-6 h-6 text-orange-500" />, 
       bgIcon: "bg-orange-50" 
@@ -195,7 +205,7 @@ const ClientProfile = () => {
           </div>
           <div className="text-right">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-slate-800">{profile.fullName || "اسم المستخدم"}</h1>
+              <h1 className="text-xl font-bold text-slate-800">{profile.fullName}</h1>
               <button 
                 onClick={() => setIsEditModalOpen(true)}
                 className="text-gray-400 hover:text-blue-600 transition-colors"
@@ -204,14 +214,14 @@ const ClientProfile = () => {
                 <FiEdit3 className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-gray-400 text-sm mt-1">{profile.phoneNumber || "بدون رقم هاتف"}</p>
+            <p className="text-gray-400 text-sm mt-1">{profile.phoneNumber || "لا يوجد رقم هاتف مسجل"}</p>
           </div>
         </div>
 
         {/* زر الشحن وسحب الرصيد */}
         <div className="w-full sm:w-auto">
           <button 
-            onClick={() => navigate("/charge-wallet")}
+            onClick={() => navigate("/client/charge-wallet")}
             className="w-full sm:px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 shadow-md shadow-blue-100 transition-colors duration-200"
           >
             <span>شحن / سحب رصيد</span>
@@ -236,101 +246,75 @@ const ClientProfile = () => {
         ))}
       </div>
 
-      {/* 2. Active Bookings */}
+      {/* 2. Active Tasks */}
       <div className="mb-8 sm:mb-10">
-        <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-4 sm:mb-5">المهام النشطة</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-4 sm:mb-5">المهام والمشاريع النشطة</h2>
 
-        {activeBookings.length === 0 ? (
+        {activeTasks.length === 0 ? (
           <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center text-gray-400 shadow-sm">
             لا توجد مهام نشطة حالياً
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {activeBookings.map((booking) => {
-              const st = statusMap[booking.status] ?? { label: booking.status, color: "bg-gray-100 text-gray-600" };
-              const isPending = booking.status === "Pending";
-              const isInProgress = booking.status === "InProgress" || booking.status === "Accepted";
+            {activeTasks.map((task) => {
+              const st = statusMap[task.status] ?? { label: task.status, color: "bg-gray-100 text-gray-600" };
+              const isPending = task.status === "Pending" || !task.status;
+              const isInProgress = task.status === "In Progress" || task.status === "InProgress" || task.status === "Accepted";
+              
               return (
-                <div key={booking.id} className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between">
+                <div key={task.id} className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between">
                   <div className="flex justify-between items-start gap-2 mb-4">
                     <span className={`text-[11px] sm:text-xs px-2.5 py-1 rounded-md font-medium shrink-0 ${st.color}`}>
                       {st.label}
                     </span>
-                    <div className="flex items-center gap-2.5 sm:gap-3">
-                      <div className="text-right">
-                        <h4 className="font-bold text-slate-800 text-xs sm:text-sm">
-                          {booking.workerName ?? "فني"}
-                        </h4>
-                        <div className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
-                          {booking.specialty ?? ""}
-                        </div>
-                      </div>
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-200 overflow-hidden relative border border-gray-100 shrink-0 flex items-center justify-center">
-                        {booking.workerImageUrl ? (
-                          <img
-                            src={booking.workerImageUrl}
-                            alt={booking.workerName}
-                            className="w-full h-full object-cover"
-                            onError={(e) => (e.target.style.display = "none")}
-                          />
-                        ) : (
-                          <FiUser className="w-5 h-5 text-slate-400" />
-                        )}
-                      </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-gray-400 font-medium">رقم المهمة: #{task.id}</span>
                     </div>
                   </div>
 
                   <div className="mb-4 sm:mb-5">
                     <h3 className="text-sm sm:text-base font-bold text-blue-600 mb-1.5 sm:mb-2">
-                      {booking.taskTitle ?? "طلب خدمة"}
+                      {task.name ?? "مهمة غير مسماة"}
                     </h3>
                     <p className="text-[11px] sm:text-xs text-gray-400 leading-relaxed">
-                      {booking.notes ?? ""}
+                      {task.description ?? "لا يوجد وصف لهذه المهمة."}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4 text-center">
+                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mb-4 text-center">
                     <div className="border border-gray-100 bg-slate-50/50 rounded-xl p-1.5 sm:p-2">
                       <div className="flex items-center justify-center gap-1 text-[10px] sm:text-[11px] text-gray-400 mb-1">
                         <FiDollarSign className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                        <span>السعر</span>
+                        <span>متوسط التكلفة</span>
                       </div>
                       <span className="text-[11px] sm:text-xs font-bold text-slate-700 block truncate">
-                        {booking.totalPrice ? `${booking.totalPrice} ج.م` : "—"}
+                        {task.avgCost ? `${task.avgCost} ج.م` : "—"}
                       </span>
                     </div>
                     <div className="border border-gray-100 bg-slate-50/50 rounded-xl p-1.5 sm:p-2">
                       <div className="flex items-center justify-center gap-1 text-[10px] sm:text-[11px] text-gray-400 mb-1">
-                        <FiCalendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                        <span>الموعد</span>
+                        <FiClock className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                        <span>الوقت المتوقع</span>
                       </div>
                       <span className="text-[11px] sm:text-xs font-bold text-slate-700 block truncate">
-                        {booking.scheduledDate
-                          ? new Date(booking.scheduledDate).toLocaleDateString("ar-EG")
-                          : "—"}
-                      </span>
-                    </div>
-                    <div className="border border-gray-100 bg-slate-50/50 rounded-xl p-1.5 sm:p-2">
-                      <div className="flex items-center justify-center gap-1 text-[10px] sm:text-[11px] text-gray-400 mb-1">
-                        <FiMapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                        <span>العنوان</span>
-                      </div>
-                      <span className="text-[11px] sm:text-xs font-bold text-slate-700 block truncate">
-                        {booking.address ?? "—"}
+                        {task.avgTime ? `${task.avgTime} ساعة` : "—"}
                       </span>
                     </div>
                   </div>
 
                   {isPending && (
                     <button
-                      onClick={() => handleCancel(booking.id)}
-                      disabled={cancellingId === booking.id}
+                      onClick={() => handleDeleteTask(task.id)}
+                      disabled={deletingId === task.id}
                       className="w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-colors bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                     >
-                      {cancellingId === booking.id ? (
+                      {deletingId === task.id ? (
                         <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        "إلغاء"
+                        <>
+                          <FiTrash2 className="w-3.5 h-3.5" />
+                          <span>إلغاء وحذف الطلب</span>
+                        </>
                       )}
                     </button>
                   )}
@@ -347,52 +331,43 @@ const ClientProfile = () => {
         )}
       </div>
 
-      {/* 3. Order History Table */}
+      {/* 3. Tasks History Table */}
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-4 sm:mb-5">سجل الطلبات</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-4 sm:mb-5">سجل كافة الطلبات</h2>
 
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="w-full overflow-x-auto [-webkit-overflow-scrolling:touch]">
+          <div className="w-full overflow-x-auto">
             <table className="w-full text-center border-collapse min-w-[600px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-gray-100 text-slate-700 text-xs font-bold">
-                  <th className="py-3.5 sm:py-4 px-4 border-l border-gray-100">التاريخ</th>
-                  <th className="py-3.5 sm:py-4 px-4 border-l border-gray-100">الخدمة</th>
-                  <th className="py-3.5 sm:py-4 px-4 border-l border-gray-100">الفني</th>
-                  <th className="py-3.5 sm:py-4 px-4 border-l border-gray-100">المبلغ</th>
+                  <th className="py-3.5 sm:py-4 px-4 border-l border-gray-100">رقم الطلب</th>
+                  <th className="py-3.5 sm:py-4 px-4 border-l border-gray-100">عنوان الخدمة</th>
+                  <th className="py-3.5 sm:py-4 px-4 border-l border-gray-100">الوقت المتوقع</th>
+                  <th className="py-3.5 sm:py-4 px-4 border-l border-gray-100">التكلفة</th>
                   <th className="py-3.5 sm:py-4 px-4">الحالة</th>
                 </tr>
               </thead>
               <tbody className="text-[11px] sm:text-xs text-slate-600 divide-y divide-gray-100">
                 {pagedHistory.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-gray-400">لا توجد سجلات</td>
+                    <td colSpan={5} className="py-8 text-gray-400">لا توجد سجلات بعد</td>
                   </tr>
                 ) : (
                   pagedHistory.map((row) => {
-                    const st = statusMap[row.status] ?? { label: row.status, color: "bg-gray-100 text-gray-500" };
+                    const st = statusMap[row.status] ?? { label: row.status || "قيد الانتظار", color: "bg-amber-100 text-amber-600" };
                     return (
                       <tr key={row.id} className="hover:bg-slate-50/40 transition-colors">
-                        <td className="py-3.5 sm:py-4 px-4 border-l border-gray-100">
-                          <div className="font-bold text-slate-700 mb-0.5">
-                            {row.scheduledDate
-                              ? new Date(row.scheduledDate).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })
-                              : "—"}
-                          </div>
-                          <div className="text-gray-400 text-[10px] sm:text-[11px]">
-                            {row.scheduledDate
-                              ? new Date(row.scheduledDate).toLocaleDateString("ar-EG")
-                              : ""}
-                          </div>
+                        <td className="py-3.5 sm:py-4 px-4 border-l border-gray-100 font-bold text-slate-500">
+                          #{row.id}
+                        </td>
+                        <td className="py-3.5 sm:py-4 px-4 border-l border-gray-100 font-medium text-slate-700 text-right pr-6">
+                          {row.name ?? "—"}
                         </td>
                         <td className="py-3.5 sm:py-4 px-4 border-l border-gray-100 font-medium text-slate-700">
-                          {row.taskTitle ?? row.specialty ?? "—"}
-                        </td>
-                        <td className="py-3.5 sm:py-4 px-4 border-l border-gray-100">
-                          <span className="text-blue-500 font-medium">{row.workerName ?? "—"}</span>
+                          {row.avgTime ? `${row.avgTime} ساعة` : "—"}
                         </td>
                         <td className="py-3.5 sm:py-4 px-4 border-l border-gray-100 font-bold text-slate-700">
-                          {row.totalPrice ? `${row.totalPrice} ج.م` : "—"}
+                          {row.avgCost ? `${row.avgCost} ج.م` : "—"}
                         </td>
                         <td className="py-3.5 sm:py-4 px-4">
                           <span className={`inline-block px-2.5 py-1 rounded-md font-medium text-[10px] sm:text-[11px] ${st.color}`}>
