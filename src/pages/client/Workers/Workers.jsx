@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom'; // 1. استيراد useLocation لاستقبال التخصص
+import { useLocation } from 'react-router-dom';
 import { FiSearch, FiBriefcase, FiMapPin, FiStar, FiSliders } from 'react-icons/fi';
 import { HiOutlineWrenchScrewdriver } from 'react-icons/hi2';
 
 const Workers = () => {
   const location = useLocation();
   
-  // 2. استقبال التخصص القادم من صفحة الخدمات وافتراضياً "الكل"
+  // استقبال التخصص القادم من صفحة الخدمات (إن وجد) وافتراضياً "الكل"
   const initialProfession = location.state?.selectedProfession || 'الكل';
 
   // الحالات الخاصة بالفلترة
   const [searchTerm, setSearchTerm] = useState('');
   const [profession, setProfession] = useState(initialProfession);
-  const [selectedRating, setSelectedRating] = useState(5);
-  const [distance, setDistance] = useState(50);
-  const [isAvailable, setIsAvailable] = useState(true);
+  const [selectedRating, setSelectedRating] = useState('الكل'); // تم تعديلها لتقبل "الكل" أو رقم محدد
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // تحديث حالة الفلترة إذا انتقل المستخدم من صفحة الخدمات بتخصص جديد
@@ -24,12 +22,13 @@ const Workers = () => {
     }
   }, [location.state]);
 
-  // مصفوفة الفنيين للمحاكاة (مع تخصصات متنوعة لتجربة الفلترة بشكل صحيح)
+  // مصفوفة الفنيين للمحاكاة (مع تخصصات متنوعة باللغتين لتفادي أي تعارض)
   const workersData = [
     {
       id: 1,
       name: 'خالد عبد الرحمن',
       profession: 'Plumbing',
+      professionAr: 'سباكة (Plumbing)',
       location: 'القاهرة',
       rating: 5,
       isVerified: true,
@@ -39,6 +38,7 @@ const Workers = () => {
       id: 2,
       name: 'أحمد محمود',
       profession: 'Electrical',
+      professionAr: 'كهرباء (Electrical)',
       location: 'الجيزة',
       rating: 5,
       isVerified: true,
@@ -48,6 +48,7 @@ const Workers = () => {
       id: 3,
       name: 'سعيد عبد الله',
       profession: 'Air Conditioning',
+      professionAr: 'تكييف (Air Conditioning)',
       location: 'الأسكندرية',
       rating: 4,
       isVerified: false,
@@ -57,6 +58,7 @@ const Workers = () => {
       id: 4,
       name: 'محمد علي',
       profession: 'Painting',
+      professionAr: 'دهانات (Painting)',
       location: 'طنطا',
       rating: 5,
       isVerified: true,
@@ -66,6 +68,7 @@ const Workers = () => {
       id: 5,
       name: 'عادل شريف',
       profession: 'Carpentry',
+      professionAr: 'نجارة (Carpentry)',
       location: 'حلوان',
       rating: 3,
       isVerified: true,
@@ -73,19 +76,26 @@ const Workers = () => {
     }
   ];
 
-  // دالة لتصفية الفنيين فعلياً بناءً على الاختيارات
+  // دالة لتصفية الفنيين فعلياً بناءً على خيارات المستخدم
   const filteredWorkers = workersData.filter(worker => {
-    const matchesProfession = profession === 'الكل' || worker.profession.toLowerCase() === profession.toLowerCase();
+    // 1. تصفية المهنة (الكل أو مطابقة تخصص الفني)
+    const matchesProfession = profession === 'الكل' || 
+      worker.profession.toLowerCase() === profession.toLowerCase();
+
+    // 2. تصفية حقل البحث (الاسم أو التخصص بالإنجليزية أو العربية)
     const matchesSearch = worker.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          worker.profession.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRating = worker.rating === selectedRating;
+      worker.profession.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      worker.professionAr.includes(searchTerm);
+
+    // 3. تصفية التقييم
+    const matchesRating = selectedRating === 'الكل' || worker.rating === Number(selectedRating);
 
     return matchesProfession && matchesSearch && matchesRating;
   });
 
   return (
     <div className="w-full min-h-screen bg-slate-50/50 p-4 sm:p-6 lg:p-8 font-sans" dir="rtl">
-      
+
       {/* العنوان العلوي مع شارة العدد الفعلي للفنيين بعد التصفية */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -99,24 +109,24 @@ const Workers = () => {
         {/* زر الفلترة للشاشات الصغيرة */}
         <button 
           onClick={() => setShowMobileFilters(!showMobileFilters)}
-          className="lg:hidden bg-white border border-gray-200 p-2.5 rounded-xl text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm font-bold"
+          className="lg:hidden bg-white border border-gray-200 p-2.5 rounded-xl text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm font-bold shadow-sm"
         >
-          <FiSliders className="w-4 h-4 text-[#0086ff]" />
-          <span>تصفية </span>
+          <FiSliders className="w-4 h-4 text-blue-500" />
+          <span>تصفية النتائج</span>
         </button>
       </div>
 
+      {/* الهيكل الرئيسي المقسم إلى جزأين */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-        
+
         {/* 1. لوحة الفلترة الجانبية */}
         <div className={`
           bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-6 lg:block
-          ${showMobileFilters ? 'block fixed inset-x-4 top-20 z-50 shadow-2xl border-blue-100 animate-in fade-in zoom-in-95' : 'hidden'}
-          lg:sticky lg:top-6
+          ${showMobileFilters ? 'block fixed inset-x-4 top-24 z-50 shadow-2xl border-blue-100 animate-in fade-in zoom-in-95' : 'hidden'}
         `}>
-          <div className="flex items-center justify-between lg:hidden border-b pb-3 mb-2">
-            <h3 className="font-bold text-slate-800">خيارات التصفية</h3>
-            <button onClick={() => setShowMobileFilters(false)} className="text-xs text-red-500 font-bold">إغلاق</button>
+          <div className="flex items-center justify-between border-b border-gray-50 pb-3">
+            <h2 className="text-sm sm:text-base font-bold text-slate-800">خيارات التصفية</h2>
+            <button onClick={() => setShowMobileFilters(false)} className="text-xs text-red-500 font-bold lg:hidden">إغلاق</button>
           </div>
 
           {/* حقل البحث */}
@@ -130,15 +140,15 @@ const Workers = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-right text-sm focus:outline-none focus:border-[#0086ff]"
               />
-              <FiSearch className="absolute inset-y-0 right-3.5 my-auto text-gray-400 w-4 h-4" />
+              <FiSearch className="absolute top-3.5 right-3.5 text-gray-400 w-4 h-4" />
             </div>
           </div>
 
-          {/* قائمة المهن متوافقة مع الـ 9 تخصصات في الـ Backend */}
+          {/* قائمة المهن متوافقة مع الـ Backend */}
           <div className="space-y-2">
             <label className="block text-sm font-bold text-slate-700">المهنة</label>
             <select 
-              value={profession} 
+              value={profession}
               onChange={(e) => setProfession(e.target.value)}
               className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-right text-sm focus:outline-none focus:border-[#0086ff] cursor-pointer"
             >
@@ -156,64 +166,41 @@ const Workers = () => {
 
           {/* حقل التقييم بالنجوم */}
           <div className="space-y-2">
-            <label className="block text-sm font-bold text-slate-700">التقييم</label>
-            <div className="space-y-2">
-              {[5, 4, 3, 2, 1].map((stars) => (
-                <label key={stars} className="flex items-center justify-between cursor-pointer group">
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {Array(5).fill(0).map((_, i) => (
-                      <FiStar key={i} className={`w-4 h-4 ${i < stars ? 'fill-amber-400' : 'text-gray-200'}`} />
-                    ))}
-                  </div>
-                  <input 
-                    type="checkbox" 
-                    checked={selectedRating === stars}
-                    onChange={() => setSelectedRating(stars)}
-                    className="w-4 h-4 rounded border-gray-300 text-[#0086ff] focus:ring-[#0086ff]" 
-                  />
-                </label>
-              ))}
-            </div>
+            <label className="block text-sm font-bold text-slate-700">التقييم الفني</label>
+            <select 
+              value={selectedRating}
+              onChange={(e) => setSelectedRating(e.target.value)}
+              className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-right text-sm focus:outline-none focus:border-[#0086ff] cursor-pointer"
+            >
+              <option value="الكل">جميع التقييمات</option>
+              <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+              <option value="4">⭐⭐⭐⭐ (4/5)</option>
+              <option value="3">⭐⭐⭐ (3/5)</option>
+            </select>
           </div>
 
-          {/* المسافة */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm font-bold">
-              <span className="text-slate-700 flex items-center gap-1">
-                <FiMapPin className="w-3.5 h-3.5 text-gray-400" /> المسافة
-              </span>
-              <span className="bg-blue-50 text-[#0086ff] px-2 py-0.5 rounded text-xs">{distance} كم</span>
-            </div>
-            <input 
-              type="range" 
-              min="5" 
-              max="100" 
-              value={distance}
-              onChange={(e) => setDistance(Number(e.target.value))}
-              className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#0086ff]" 
-            />
-          </div>
-
-          {/* متاح الآن */}
-          <label className="flex items-center justify-between pt-2 cursor-pointer border-t border-gray-50">
-            <span className="text-sm font-bold text-slate-700">متاح الآن</span>
-            <input 
-              type="checkbox" 
-              checked={isAvailable}
-              onChange={(e) => setIsAvailable(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-[#0086ff] focus:ring-[#0086ff]" 
-            />
-          </label>
+          {/* زر تصفير الفلاتر */}
+          <button 
+            onClick={() => {
+              setSearchTerm('');
+              setProfession('الكل');
+              setSelectedRating('الكل');
+            }}
+            className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-xl text-xs font-bold transition-all"
+          >
+            إعادة تعيين الفلاتر
+          </button>
         </div>
 
         {/* 2. شبكة عرض كروت الفنيين المفلترة فعلياً */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:col-span-3">
           {filteredWorkers.length > 0 ? (
-            filteredWorkers.map((worker, index) => (
+            filteredWorkers.map((worker) => (
               <div 
-                key={index} 
+                key={worker.id} 
                 className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col items-center justify-between text-center transition-all hover:shadow-md group"
               >
+                {/* الصورة والتوثيق */}
                 <div className="w-24 h-24 rounded-full bg-slate-100 relative border-2 border-white shadow-sm mb-4">
                   <img 
                     src={worker.image} 
@@ -221,17 +208,18 @@ const Workers = () => {
                     className="w-full h-full object-cover rounded-full"
                   />
                   {worker.isVerified && (
-                    <span className="absolute bottom-1 right-1 w-5 h-5 bg-blue-500 text-white rounded-full text-[10px] flex items-center justify-center border-2 border-white font-bold shadow-sm">✓</span>
+                    <span className="absolute bottom-1 right-1 w-5 h-5 bg-blue-500 text-white rounded-full text-[10px] flex items-center justify-center border-2 border-white font-bold shadow-sm" title="فني موثق">✓</span>
                   )}
                 </div>
 
+                {/* الاسم والمعلومات الأساسية */}
                 <div className="space-y-1 w-full">
                   <h3 className="text-base font-black text-slate-800 break-all px-2">{worker.name}</h3>
                   
                   <div className="flex items-center justify-center gap-4 text-xs text-gray-400 font-bold py-1">
                     <span className="flex items-center gap-1">
                       <FiBriefcase className="w-3.5 h-3.5 text-gray-400" />
-                      {worker.profession}
+                      {worker.professionAr.split(" ")[0]} {/* يعرض الاسم العربي للمهنة فقط */}
                     </span>
                     <span className="text-gray-200">•</span>
                     <span className="flex items-center gap-1">
@@ -240,22 +228,29 @@ const Workers = () => {
                     </span>
                   </div>
 
+                  {/* النجوم بناءً على تقييم السيرفر الفعلي */}
                   <div className="flex items-center justify-center gap-0.5 text-amber-400 pt-1 pb-4">
                     {Array(5).fill(0).map((_, i) => (
-                      <FiStar key={i} className={`w-4 h-4 ${i < worker.rating ? 'fill-amber-400' : 'text-gray-200'} text-amber-400`} />
+                      <FiStar 
+                        key={i} 
+                        className={`w-4 h-4 ${i < worker.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} 
+                      />
                     ))}
                   </div>
                 </div>
 
+                {/* زر عرض الملف الشخصي */}
                 <button className="w-full bg-[#0086ff] hover:bg-[#0074dd] text-white font-bold text-sm py-3 rounded-xl transition-colors shadow-sm mt-2">
                   عرض الملف الشخصي
                 </button>
               </div>
             ))
           ) : (
-            <div className="col-span-full py-16 flex flex-col items-center justify-center text-gray-400 gap-3">
-              <HiOutlineWrenchScrewdriver className="w-12 h-12 text-gray-300" />
-              <span className="text-sm font-bold">لا يوجد فنيين يطابقون خيارات البحث الحالية.</span>
+            // واجهة مريحة تظهر عند عدم مطابقة أي فني لخيارات البحث
+            <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-400 gap-3 bg-white border border-dashed border-gray-200 rounded-2xl">
+              <HiOutlineWrenchScrewdriver className="w-12 h-12 text-gray-300 animate-pulse" />
+              <span className="text-sm font-bold text-gray-500">لا يوجد فنيين يطابقون خيارات التصفية الحالية.</span>
+              <p className="text-xs text-gray-400">جرب البحث بكلمات أخرى أو تغيير خيارات المهن والتقييم.</p>
             </div>
           )}
         </div>
