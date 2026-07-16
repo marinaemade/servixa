@@ -6,7 +6,7 @@ import { HiOutlineWrenchScrewdriver } from 'react-icons/hi2';
 const Workers = () => {
   const location = useLocation();
   
-  // 2. استقبال التخصص القادم من صفحة الخدمات (إن وجد) وافتراضياً "الكل"
+  // 2. استقبال التخصص القادم من صفحة الخدمات وافتراضياً "الكل"
   const initialProfession = location.state?.selectedProfession || 'الكل';
 
   // الحالات الخاصة بالفلترة
@@ -102,7 +102,7 @@ const Workers = () => {
           className="lg:hidden bg-white border border-gray-200 p-2.5 rounded-xl text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm font-bold"
         >
           <FiSliders className="w-4 h-4 text-[#0086ff]" />
-          <span>تصفية</span>
+          <span>تصفية </span>
         </button>
       </div>
 

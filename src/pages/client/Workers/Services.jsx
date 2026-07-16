@@ -21,7 +21,7 @@ const Services = () => {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // مصفوفة ألوان مبهجة ومنسقة مسبقاً لتوزيعها عشوائياً أو بالتتابع
+  // مصفوفة ألوان لتوزيعها عشوائياً أو بالتتابع
   const vibrantColors = [
     'text-blue-600 bg-blue-50/60 border-blue-100',
     'text-amber-500 bg-amber-50/60 border-amber-100',
