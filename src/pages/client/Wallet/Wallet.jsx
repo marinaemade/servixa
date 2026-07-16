@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   FiLock, 
   FiChevronLeft, 
@@ -12,7 +13,7 @@ import {
 } from "react-icons/fi";
 
 const Wallet = () => {
-  // Stat Card Data matching "المحفظة.png"
+  const navigate = useNavigate();
   const stats = [
     { id: 1, title: "الرصيد المتاح", value: "١٢,٤٥٠", unit: "ريال", icon: <FiCreditCard className="w-6 h-6 text-blue-500" />, bgIcon: "bg-blue-50" },
     { id: 2, title: "مصروفات الشهر الحالي", value: "١٢,٤٥٠", unit: "ريال", icon: <FiTrendingUp className="w-6 h-6 text-green-500" />, bgIcon: "bg-green-50" },
@@ -116,7 +117,10 @@ const Wallet = () => {
           </div>
 
           {/* Call-to-action Action Button */}
-          <button className="w-full bg-white text-blue-600 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 shadow-sm hover:bg-blue-50 transition-colors duration-200">
+          <button 
+          
+              onClick={() => navigate("/charge-wallet")}
+           className="w-full bg-white text-blue-600 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 shadow-sm hover:bg-blue-50 transition-colors duration-200">
             <span>شحن / سحب رصيد</span>
             <FiArrowUpRight className="w-4 h-4 transform rotate-90" />
           </button>

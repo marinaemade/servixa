@@ -1,19 +1,23 @@
-import React, { useEffect, useState } from "react";
-import {
-  FiClock,
-  FiBriefcase,
-  FiCheckCircle,
-  FiLock,
-  FiMapPin,
-  FiCalendar,
-  FiChevronLeft,
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { 
+  FiClock, 
+  FiBriefcase, 
+  FiCheckCircle, 
+  FiLock, 
+  FiMapPin, 
+  FiCalendar, 
+  FiChevronLeft, 
   FiChevronRight,
   FiUser,
   FiCreditCard,
   FiDollarSign,
-  FiAlertCircle,
+  FiEdit3,
+  FiArrowUpRight,
+  FiAlertCircle
 } from "react-icons/fi";
-import { getMyProfile, getMyBookings, cancelBooking } from "../../../api/clientService";
+import { fetchClientProfile, updateClientProfile } from "../../../api/ClientApi";
+import { getMyBookings, cancelBooking } from "../../../api/clientService";
 
 // ── helpers ────────────────────────────────────────────────────────────
 const statusMap = {
@@ -27,26 +31,47 @@ const statusMap = {
 const PAGE_SIZE = 5;
 
 const ClientProfile = () => {
-  const [profile, setProfile] = useState(null);
+  const navigate = useNavigate();
+  
+  // State الملف الشخصي والحجوزات
+  const [profile, setProfile] = useState({
+    fullName: "",
+    phoneNumber: "",
+    balance: 0,
+    suspendedBalance: 0,
+  });
   const [bookings, setBookings] = useState([]);
+  
+  // State التحميل والأخطاء والنوافذ المنبثقة
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ fullName: "", phoneNumber: "" });
   const [page, setPage] = useState(1);
   const [cancellingId, setCancellingId] = useState(null);
 
+  // 1. جلب البيانات من السيرفر عند تحميل المكون
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [profileRes, bookingsRes] = await Promise.all([
-          getMyProfile(),
+        const [profileData, bookingsRes] = await Promise.all([
+          fetchClientProfile(),
           getMyBookings(),
         ]);
-        setProfile(profileRes.data?.data ?? profileRes.data);
-        const raw = bookingsRes.data?.data ?? bookingsRes.data ?? [];
-        setBookings(Array.isArray(raw) ? raw : []);
+
+        if (profileData) {
+          setProfile(profileData);
+          setEditForm({ 
+            fullName: profileData.fullName || "", 
+            phoneNumber: profileData.phoneNumber || "" 
+          });
+        }
+
+        const rawBookings = bookingsRes.data?.data ?? bookingsRes.data ?? [];
+        setBookings(Array.isArray(rawBookings) ? rawBookings : []);
       } catch (err) {
-        setError(err.message || "فشل تحميل البيانات");
+        setError(err.message || "فشل تحميل البيانات من الخادم");
       } finally {
         setLoading(false);
       }
@@ -54,6 +79,21 @@ const ClientProfile = () => {
     fetchData();
   }, []);
 
+  // 2. معالجة تعديل البيانات وإرسالها للسيرفر (PUT)
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    const success = await updateClientProfile(editForm);
+    if (success) {
+      setProfile((prev) => ({
+        ...prev,
+        fullName: editForm.fullName,
+        phoneNumber: editForm.phoneNumber,
+      }));
+      setIsEditModalOpen(false);
+    }
+  };
+
+  // 3. معالجة إلغاء الحجز
   const handleCancel = async (bookingId) => {
     if (!window.confirm("هل تريد إلغاء هذا الحجز؟")) return;
     try {
@@ -71,48 +111,48 @@ const ClientProfile = () => {
     }
   };
 
-  // Active bookings (not completed / not cancelled)
+  // تصفية الحجوزات النشطة (ليست مكتملة وليست ملغية)
   const activeBookings = bookings.filter(
     (b) => b.status !== "Completed" && b.status !== "Cancelled"
   );
 
-  // Paged history
+  // تقسيم سجل الطلبات لصفحات
   const totalPages = Math.max(1, Math.ceil(bookings.length / PAGE_SIZE));
   const pagedHistory = bookings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Stats derived from real data
+  // كروت الإحصائيات مدمجة من كلا الطرفين وحاصلة على الحماية اللازمة
   const stats = [
-    {
-      id: 1,
-      title: "اسم العميل",
-      value: profile ? `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim() || profile.fullName || "—" : "—",
-      unit: "",
-      icon: <FiUser className="w-6 h-6 text-blue-500" />,
-      bgIcon: "bg-blue-50",
+    { 
+      id: 1, 
+      title: "إجمالي الرصيد", 
+      value: (profile.balance ?? 0).toLocaleString("ar-EG"), 
+      unit: "ج.م", 
+      icon: <FiCreditCard className="w-6 h-6 text-blue-500" />, 
+      bgIcon: "bg-blue-50" 
     },
-    {
-      id: 2,
-      title: "الرصيد المعلق",
-      value: profile?.pendingBalance ?? "0",
-      unit: "ج.م",
-      icon: <FiLock className="w-6 h-6 text-red-500" />,
-      bgIcon: "bg-red-50",
+    { 
+      id: 2, 
+      title: "الرصيد المعلق", 
+      value: (profile.suspendedBalance ?? profile.pendingBalance ?? 0).toLocaleString("ar-EG"), 
+      unit: "ج.م", 
+      icon: <FiLock className="w-6 h-6 text-red-500" />, 
+      bgIcon: "bg-red-50" 
     },
-    {
-      id: 3,
-      title: "الطلبات النشطة",
-      value: activeBookings.length,
-      unit: "",
-      icon: <FiBriefcase className="w-6 h-6 text-green-500" />,
-      bgIcon: "bg-green-50",
+    { 
+      id: 3, 
+      title: "الطلبات النشطة", 
+      value: activeBookings.length, 
+      unit: "", 
+      icon: <FiBriefcase className="w-6 h-6 text-green-500" />, 
+      bgIcon: "bg-green-50" 
     },
-    {
-      id: 4,
-      title: "إجمالي الطلبات",
-      value: bookings.length,
-      unit: "",
-      icon: <FiClock className="w-6 h-6 text-orange-500" />,
-      bgIcon: "bg-orange-50",
+    { 
+      id: 4, 
+      title: "إجمالي الطلبات", 
+      value: bookings.length, 
+      unit: "", 
+      icon: <FiClock className="w-6 h-6 text-orange-500" />, 
+      bgIcon: "bg-orange-50" 
     },
   ];
 
@@ -146,6 +186,39 @@ const ClientProfile = () => {
 
   return (
     <div className="w-full min-h-screen bg-slate-50/50 p-3 sm:p-6 lg:p-8 font-sans overflow-x-hidden" dir="rtl">
+      
+      {/* قسم ترويسة العميل (Header Profile) */}
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold">
+            <FiUser />
+          </div>
+          <div className="text-right">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-slate-800">{profile.fullName || "اسم المستخدم"}</h1>
+              <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="text-gray-400 hover:text-blue-600 transition-colors"
+                title="تعديل الملف الشخصي"
+              >
+                <FiEdit3 className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-gray-400 text-sm mt-1">{profile.phoneNumber || "بدون رقم هاتف"}</p>
+          </div>
+        </div>
+
+        {/* زر الشحن وسحب الرصيد */}
+        <div className="w-full sm:w-auto">
+          <button 
+            onClick={() => navigate("/charge-wallet")}
+            className="w-full sm:px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 shadow-md shadow-blue-100 transition-colors duration-200"
+          >
+            <span>شحن / سحب رصيد</span>
+            <FiArrowUpRight className="w-4 h-4 transform rotate-90" />
+          </button>
+        </div>
+      </div>
 
       {/* 1. Statistics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
@@ -368,6 +441,55 @@ const ClientProfile = () => {
           )}
         </div>
       </div>
+
+      {/* نافذة تعديل بيانات العميل (Edit Profile Modal) */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 text-right">تعديل الملف الشخصي</h3>
+            
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="text-right">
+                <label className="text-xs font-bold text-gray-500 block mb-1.5">الاسم الكامل</label>
+                <input 
+                  type="text" 
+                  value={editForm.fullName} 
+                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="text-right">
+                <label className="text-xs font-bold text-gray-500 block mb-1.5">رقم الهاتف</label>
+                <input 
+                  type="text" 
+                  value={editForm.phoneNumber} 
+                  onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-bold transition-colors"
+                >
+                  إلغاء
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-100 transition-colors"
+                >
+                  حفظ التعديلات
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
