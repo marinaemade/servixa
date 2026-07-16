@@ -1,6 +1,6 @@
 import { HiUser } from "react-icons/hi";
-import WorkerCover from "../components/WorkerCover";
-import WorkerStatistics from "../components/WorkerStatistics";
+import WorkerCover from "../../../../components/worker/WorkerCover";
+import WorkerStatistics from "../../../../components/worker/WorkerStatistics";
 
 const HomeProfile = () => {
   return (
