@@ -2,182 +2,261 @@ import React, { useState } from 'react'
 import { HiOutlineChevronDown, HiArrowLeft } from 'react-icons/hi'
 import { IoCloudUploadOutline, IoClose } from 'react-icons/io5'
 import { GoCheckCircleFill } from 'react-icons/go'
-import { FiMapPin } from 'react-icons/fi' // تم استيراد أيقونة الموقع المطابقة للتصميم
+import { FiMapPin } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom' 
+// استيراد دالة الـ API التي قمنا بإنشائها
+import { createTask } from '../../api/TaskApi' 
 
 const ServiceRequestForm = () => {
-  // State management for form data and image previews
-  const [budget, setBudget] = useState('')
-  const [address, setAddress] = useState('') // State لإدخال نص العنوان
+  const navigate = useNavigate()
+
+  // الـ States الخاصة بالـ API
+  const [name, setName] = useState('')
+  const [avgCost, setAvgCost] = useState('')
+  const [avgTime, setAvgTime] = useState('')
+  const [specialtyId, setSpecialtyId] = useState('') 
+  const [description, setDescription] = useState('') 
+
+  const [address, setAddress] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+  
   const [images, setImages] = useState([
     'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400',
     'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=400'
   ])
 
-  // Image upload selection utility
+  // التخصصات المتاحة لعرضها بشكل صديق للمستخدم بدلاً من أرقام مبهمة
+  const specialtiesList = [
+    { id: 1, name: 'سباكة' },
+    { id: 2, name: 'نجارة' },
+    { id: 3, name: 'كهرباء' },
+    { id: 4, name: 'نقاشة' },
+    { id: 5, name: 'تكييف' },
+    { id: 6, name: 'ديكور' },
+    { id: 7, name: 'نظافة' },
+    { id: 8, name: 'حدادة' },
+    { id: 9, name: 'أجهزة منزلية' },
+  ]
+
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files)
     const newImageUrls = files.map(file => URL.createObjectURL(file))
     setImages([...images, ...newImageUrls])
   }
 
-  // دالة وهمية لتحديد الموقع الحالي
-  const handleGetCurrentLocation = () => {
-    // يمكنك دمج الـ Geolocation API هنا لاحقاً
-    setAddress('جاري تحديد موقعك الحالي...')
+  const removeImage = (indexToRemove) => {
+    setImages(images.filter((_, index) => index !== indexToRemove))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!name || !avgCost || !avgTime || !specialtyId) {
+      alert('يرجى ملء جميع الحقول المطلوبة المميزة بنجمة (*)')
+      return
+    }
+
+    setIsLoading(true)
+
+    // تجهيز البيانات المطابقة تماماً لـ CreateTaskDto
+    const payload = {
+      name: name,
+      avgCost: parseFloat(avgCost),
+      avgTime: parseInt(avgTime, 10),
+      specialtyId: parseInt(specialtyId, 10)
+    }
+
+    try {
+      //sending data
+      const success = await createTask(payload)
+
+      if (success) {
+        setShowSuccess(true)
+        setTimeout(() => {
+          setShowSuccess(false)
+          navigate('/client/projects')
+        }, 2000)
+      }
+    } catch (error) {
+      console.error('Error post task:', error)
+      alert(error.message || 'فشل الاتصال بالخادم. تأكد من اتصالك بالإنترنت.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto bg-white min-h-screen md:min-h-0 md:my-4 md:rounded-lg overflow-hidden" dir="rtl" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      
-      {/* Header */}
-      <div className="relative flex items-center justify-center py-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-[#0086ff]">طلب خدمة</h1>
-      </div>
-
-      <div className="p-4 space-y-5">
+    <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8 font-sans" dir="rtl">
+      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
         
-        {/* Field 1: Title / Problem */}
-        <div className="space-y-1.5">
-          <label className="block text-right text-lg font-bold text-[#374151]">اية المشكلة</label>
-          <input
-            type="text"
-            placeholder="اكتب اية المشكلة مثل تسريب مياة"
-            className="w-full px-4 py-3 bg-[#fafafa] border border-gray-300 rounded-xl text-right text-gray-800 placeholder-[#9ca3af] focus:outline-none focus:border-[#0086ff] text-sm"
-          />
+        {/* العنوان الرئيسي */}
+        <div className="flex items-center justify-center mb-8 pb-4 border-b border-gray-100">
+          <h1 className="text-2xl text-center font-bold text-blue-600">طلب خدمة جديدة</h1>
         </div>
 
-        {/* Field 2: Description */}
-        <div className="space-y-1.5">
-          <label className="block text-right text-lg font-bold text-[#374151]">الوصف</label>
-          <textarea
-            placeholder="اكتب تفاصيل المشكلة وكل معلومة سيحتاجها الفني..."
-            rows={5}
-            className="w-full px-4 py-3 bg-[#fafafa] border border-gray-300 rounded-xl text-right text-gray-800 placeholder-[#9ca3af] focus:outline-none focus:border-[#0086ff] text-sm resize-none"
-          />
-        </div>
-
-        {/* New Field: Location Picker (الموقع والعنوان من الصورة المرفقة) */}
-        <div className="border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm bg-white space-y-4">
-          {/* العنوان مع الأيقونة */}
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-[#374151]">العنوان</h3>
-            <div className="w-9 h-9 bg-blue-50/60 rounded-full flex items-center justify-center text-[#0086ff]">
-              <FiMapPin className="w-5 h-5" />
-            </div>
-          </div>
-
-          {/* حقل إدخال العنوان التوضيحي */}
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="مثال: الرياض، حي النرجس"
-            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-right text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0086ff] text-sm"
-          />
-
-          {/* خريطة ثابتة توضيحية مع مؤشر السنتر */}
-          <div className="w-full h-32 sm:h-40 rounded-2xl overflow-hidden relative border border-gray-100 shadow-inner">
-            <img 
-              src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=600" 
-              alt="Map placeholder" 
-              className="w-full h-full object-cover opacity-60 grayscale-[30%]"
-            />
-            {/* مؤشر الخريطة الدائري الأزرق من التصميم */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-6 h-6 bg-[#0086ff] rounded-full border-4 border-white shadow-md flex items-center justify-center animate-pulse">
-                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* زر تحديد العنوان الحالي */}
-          <button
-            type="button"
-            onClick={handleGetCurrentLocation}
-            className="w-full bg-[#0086ff] hover:bg-[#0074dd] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm text-sm"
-          >
-            <FiMapPin className="w-4 h-4" />
-            <span>تحديد العنوان الحالي</span>
-          </button>
-        </div>
-
-        {/* Field 3: Budget Selection */}
-        <div className="space-y-2">
-          <label className="block text-lg font-bold text-gray-700">تحديد المبلغ</label>
-          <div className="relative">
-            <select
-              value={budget}
-              onChange={(e) => setBudget(e.target.value)}
-              className="w-full px-4 py-3.5 bg-[#fafafa] border border-gray-200 rounded-xl text-right text-gray-500 appearance-none focus:outline-none focus:border-[#0086ff] transition-colors cursor-pointer text-sm"
-            >
-              <option value="" disabled hidden>حدد الميزانية التقديرية</option>
-              <option value="100-500">100 - 500 جنيه</option>
-              <option value="500-1000">500 - 1000 جنيه</option>
-              <option value="1000+">أكثر من 1000 جنيه</option>
-            </select>
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-500">
-              <HiOutlineChevronDown className="w-5 h-5" />
-            </div>
-          </div>
-        </div>
-
-        {/* Field 4: Images Grid */}
-        <div className="space-y-2">
-          <label className="block text-lg font-bold text-gray-700">الصور</label>
+        {/* نموذج الإدخال */}
+        <form onSubmit={handleSubmit} className="space-y-6">
           
-          <div className="grid grid-cols-3 gap-3">
-            {/* Upload Box Container */}
-            <label className="relative flex flex-col items-center justify-center aspect-[4/3] border-2 border-dashed border-[#0086ff] bg-[#edf5ff] rounded-xl cursor-pointer hover:bg-[#e1eefd] transition-colors p-2 text-center">
-              <input 
-                type="file" 
-                multiple 
-                accept="image/*" 
-                className="hidden" 
-                onChange={handleImageUpload} 
-              />
-              <IoCloudUploadOutline className="w-7 h-7 text-[#0086ff] mb-1" />
-              <span className="text-xs sm:text-sm font-bold text-[#0086ff] block">اضغط لاضافة الملفات</span>
-              <span className="text-[9px] text-gray-400 mt-0.5 hidden sm:block">(حد أقصى 100 MB)</span>
-            </label>
+          {/* اسم الخدمة/المهمة */}
+          <div className="space-y-1.5">
+            <label className="block text-right text-lg font-bold text-[#374151]">اسم الخدمة المطلوبة *</label>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="مثال: تصليح صنبور مياه، تركيب إضاءة..."
+              className="w-full px-4 py-3 bg-[#fafafa] border border-gray-300 rounded-xl text-right text-gray-800 placeholder-[#9ca3af] focus:outline-none focus:border-[#0086ff] focus:ring-1 focus:ring-[#0086ff] text-sm transition"
+            />
+          </div>
 
-            {/* Previews */}
-            {images.map((src, index) => (
-              <div key={index} className="relative aspect-[4/3] rounded-xl overflow-hidden group border border-gray-100">
-                <img 
-                  src={src} 
-                  alt={`preview-${index}`} 
-                  className="w-full h-full object-cover"
+          {/* حقل الوصف */}
+          <div className="space-y-1.5">
+            <label className="block text-right text-lg font-bold text-[#374151]">الوصف</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="اكتب تفاصيل المشكلة وكل معلومة سيحتاجها الفني..."
+              rows={5}
+              className="w-full px-4 py-3 bg-[#fafafa] border border-gray-300 rounded-xl text-right text-gray-800 placeholder-[#9ca3af] focus:outline-none focus:border-[#0086ff] focus:ring-1 focus:ring-[#0086ff] text-sm resize-none transition"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* التكلفة المتوقعة */}
+            <div className="space-y-1.5">
+              <label className="block text-right text-lg font-bold text-[#374151]">التكلفة التقريبية *</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  required
+                  value={avgCost}
+                  onChange={(e) => setAvgCost(e.target.value)} // تم تعديلها لتغير الحالة الصحيحة
+                  placeholder="0.00"
+                  className="w-full px-4 py-3 bg-[#fafafa] border border-gray-300 rounded-xl text-right text-gray-800 placeholder-[#9ca3af] focus:outline-none focus:border-[#0086ff] focus:ring-1 focus:ring-[#0086ff] text-sm transition pl-12"
                 />
-                <button 
-                  type="button"
-                  onClick={() => setImages(images.filter((_, i) => i !== index))}
-                  className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <IoClose className="w-3 h-3" />
-                </button>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">ج.م</span>
               </div>
-            ))}
+            </div>
+
+            {/* الوقت المتوقع بالدقائق */}
+            <div className="space-y-1.5">
+              <label className="block text-right text-lg font-bold text-[#374151]">الوقت المتوقع بالساعات *</label>
+              <input
+                type="number"
+                required
+                value={avgTime}
+                onChange={(e) => setAvgTime(e.target.value)}
+                placeholder="مثال: 2"
+                className="w-full px-4 py-3 bg-[#fafafa] border border-gray-300 rounded-xl text-right text-gray-800 placeholder-[#9ca3af] focus:outline-none focus:border-[#0086ff] focus:ring-1 focus:ring-[#0086ff] text-sm transition"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* نوع الخدمة (Specialty ID Dropdown) */}
+            <div className="space-y-1.5">
+              <label className="block text-right text-lg font-bold text-[#374151]">نوع الخدمة (التخصص) *</label>
+              <div className="relative">
+                <select
+                  required
+                  value={specialtyId}
+                  onChange={(e) => setSpecialtyId(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#fafafa] border border-gray-300 rounded-xl text-right text-gray-800 focus:outline-none focus:border-[#0086ff] focus:ring-1 focus:ring-[#0086ff] text-sm transition appearance-none cursor-pointer pl-10"
+                >
+                  <option value="" disabled>اختر نوع الخدمة...</option>
+                  {specialtiesList.map((spec) => (
+                    <option key={spec.id} value={spec.id}>
+                      {spec.name}
+                    </option>
+                  ))}
+                </select>
+                <HiOutlineChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5" />
+              </div>
+            </div>
+
+            {/* العنوان */}
+            <div className="space-y-1.5">
+              <label className="block text-right text-lg font-bold text-[#374151]">العنوان بالتفصيل</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="شارع التسعين، التجمع الخامس"
+                  className="w-full pr-10 pl-4 py-3 bg-[#fafafa] border border-gray-300 rounded-xl text-right text-gray-800 placeholder-[#9ca3af] focus:outline-none focus:border-[#0086ff] focus:ring-1 focus:ring-[#0086ff] text-sm transition"
+                />
+                <FiMapPin className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+              </div>
+            </div>
+          </div>
+
+          {/* رفع وتوضيح المشكلة بالصور */}
+          <div className="space-y-2">
+            <label className="block text-right text-lg font-bold text-[#374151]">أرفق صوراً توضيحية للمشكلة</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {/* زر الرفع */}
+              <label className="border-2 border-dashed border-gray-200 hover:border-blue-500 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition h-28 bg-[#fafafa] hover:bg-blue-50">
+                <IoCloudUploadOutline className="w-8 h-8 text-blue-500 mb-1" />
+                <span className="text-xs font-semibold text-gray-600">رفع صورة</span>
+                <input type="file" multiple onChange={handleImageUpload} className="hidden" accept="image/*" />
+              </label>
+
+              {/* معاينة الصور المرفوعة */}
+              {images.map((img, idx) => (
+                <div key={idx} className="relative group rounded-xl overflow-hidden h-28 border border-gray-100">
+                  <img src={img} alt="preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-90 hover:opacity-100 transition shadow"
+                  >
+                    <IoClose className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* زر التقديم والإرسال */}
+          <div className="pt-4 border-t border-gray-100">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full py-4 rounded-xl font-bold text-white transition flex items-center justify-center gap-2 ${
+                isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg'
+              }`}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>جاري الإرسال...</span>
+                </>
+              ) : (
+                'تأكيد ونشر طلب الخدمة'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* نافذة النجاح المنبثقة (Success Modal) */}
+      {showSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 transition-opacity">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl transform scale-100 transition-all">
+            <div className="flex justify-center mb-4">
+              <GoCheckCircleFill className="w-16 h-16 text-emerald-500 animate-bounce" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">عملية ناجحة</h3>
+            <p className="text-gray-600 mb-4">تم إضافة طلب خدمة بنجاح!</p>
+            <p className="text-xs text-gray-400">جاري توجيهك إلى صفحة مشروعاتك...</p>
           </div>
         </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className="w-full bg-[#0086ff] hover:bg-[#0074dd] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-colors mt-6 shadow-sm text-base"
-        >
-          <span className="font-semibold">ارسال الطلب</span>
-          <HiArrowLeft className="w-5 h-5" />
-        </button>
-
-        {/* Bottom Warning Alert Panel */}
-        <div className="bg-[#fff9e6] rounded-xl p-3.5 flex items-start justify-between border border-[#ffeeba] mt-4">
-          <p className="text-[11px] text-[#1f2937] leading-relaxed font-medium text-right flex-1">
-            يرجى التأكد من توفر رصيد في محفظتك يغطي الحد الأقصى لميزانية الخدمة (600 جنيه) لضمان جدية الطلب وحفظ حقوق الطرفين.
-          </p>
-          <GoCheckCircleFill className="w-4 h-4 text-gray-800 shrink-0 mr-2 mt-0.5" />
-        </div>
-
-      </div>
+      )}
     </div>
   )
 }

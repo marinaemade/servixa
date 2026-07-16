@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { 
   FiEdit, 
@@ -6,27 +6,74 @@ import {
   FiUser, 
   FiTool, 
   FiBarChart2, 
-  FiAward
+  FiAward,
+  FiLoader
 } from "react-icons/fi";
+import { fetchClientProfile, updateClientProfile } from "../../../api/ClientApi";
 
 const MainPage = () => {
   const navigate = useNavigate(); 
   
-  // إعدادات الحالات لتحديث الملف الشخصي وتفعيل وضع التعديل
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // إعدادات الحالات لتحديث الملف الشخصي وتفعيل وضع التعديل
   const [profile, setProfile] = useState({
-    name: "أحمد منصور",
-    location: "العنوان",
-    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200"
+    name: "",
+    location: "",
+    image: "",
+    imageFile: null // لتخزين الملف الأصلي تمهيداً لرفعه إلى السيرفر
   });
 
   const [activeTab, setActiveTab] = useState("profile");
 
+  // 1. جلب البيانات عند تحميل المكون
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const data = await fetchClientProfile();
+      if (data) {
+        setProfile({
+          name: data.fullName || "أحمد منصور",
+          location: data.location || "العنوان",
+          image: data.image || "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200",
+          imageFile: null
+        });
+      }
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  // التعامل مع اختيار الصورة الجديدة محلياً وحفظ ملف الصورة الأصلي
   const handleImage = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setProfile((p) => ({ ...p, image: URL.createObjectURL(file) }));
+    setProfile((p) => ({ 
+      ...p, 
+      image: URL.createObjectURL(file), // للعرض المؤقت في الواجهة
+      imageFile: file // لحفظ الملف لإرساله للسيرفر لاحقاً
+    }));
   };
+
+  // 2. إرسال البيانات المحدثة للسيرفر (PUT)
+  const handleSave = async () => {
+    setSaving(true);
+    const success = await updateClientProfile(profile);
+    if (success) {
+      setIsEditing(false);
+    }
+    setSaving(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-slate-50/50">
+        <FiLoader className="w-8 h-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-slate-50/50 p-3 sm:p-6 lg:p-8 font-sans overflow-x-hidden" dir="rtl">
@@ -47,16 +94,15 @@ const MainPage = () => {
           ) : (
             <div className="flex gap-2 w-full sm:w-auto justify-start">
               <button
-                onClick={() => {
-                  // TODO: call API here if needed
-                  setIsEditing(false);
-                }}
-                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-colors text-center"
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-colors text-center flex items-center justify-center min-w-[70px]"
               >
-                حفظ
+                {saving ? <FiLoader className="animate-spin w-4 h-4" /> : "حفظ"}
               </button>
               <button
                 onClick={() => setIsEditing(false)}
+                disabled={saving}
                 className="flex-1 sm:flex-none bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-colors text-center"
               >
                 إلغاء
@@ -67,7 +113,7 @@ const MainPage = () => {
 
         {/* Profile Info Details */}
         <div className="flex flex-col items-center justify-center text-center mt-2 sm:mt-0">
-          <div className="w-24 h-24 rounded-full bg-slate-200 relative border-2 border-white shadow-md mb-4 group">
+          <div className="w-24 h-24 rounded-full bg-slate-200 relative border-2 border-white shadow-md mb-4 group overflow-hidden">
             <div className="absolute inset-0 bg-slate-400 rounded-full flex items-center justify-center text-white text-3xl">
               <FiUser />
             </div>
